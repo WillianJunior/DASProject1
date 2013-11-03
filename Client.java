@@ -8,6 +8,7 @@ public class Client implements Serializable {
 	private RmiServerIntf server;
 
 	public Client () throws Exception {
+		me = null;
 		server = (RmiServerIntf)Naming.lookup("//localhost/Server");
 	}
 
@@ -72,7 +73,15 @@ public class Client implements Serializable {
 		do {
 			System.out.print("Username: ");
 			name = System.console().readLine();
-		} while (!name.equals(TypesNConst.EXIT_CODE) && !client.login(name));
+
+			try {
+				client.login(name);
+			} catch (Exception e) {
+				System.out.println(e.getMessage());
+				name = null; // probably there is a better way to signal inside the while that an exception just occured
+			}
+			
+		} while (name == null);
 
 		while (true) {
 			// show the options

@@ -6,7 +6,6 @@ public class TypesNConst {
 	public static final int MAX_ITEM_REMOVAL_TIME = 10; // in minutes
 
 	// String Constants
-	public static final String EXIT_CODE = ":exit";
 
 	// Enums
 	public static enum UserType {

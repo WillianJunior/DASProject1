@@ -29,7 +29,7 @@ public class Server
 			users.add(user);
 			return user;
 		} else {
-			System.out.println("[logout] user exists");
+			System.out.println("[login] user exists");
 			user.connect(client);
 			return user;
 		}
@@ -49,6 +49,7 @@ public class Server
 	private User findUser (String username) {
 		for (User u : users) {
 			if (u.getName().equals(username)) {
+				System.out.println("[findUser] found: " + u.getName());
 				return u;
 			}
 		}
@@ -57,9 +58,8 @@ public class Server
 
 	private User findUser (User user) {
 		for (User u : users) {
-			System.out.println("[findUser] out: " + u.getName());
 			if (u.equals(user)) {
-				System.out.println("[findUser] in: " + u.getName());
+				System.out.println("[findUser] found: " + u.getName());
 				return u;
 			}
 		}

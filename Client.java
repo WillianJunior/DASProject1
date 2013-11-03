@@ -1,8 +1,66 @@
-public class Client {
-	
-	User me;
+import java.rmi.Naming;
 
-	public static void main(String[] args) {
+import java.io.Serializable;
+
+public class Client implements Serializable {
+	
+	private User me;
+	private RmiServerIntf server;
+
+	public Client () throws Exception {
+		server = (RmiServerIntf)Naming.lookup("//localhost/Server");
+	}
+
+	private static void print_options () {
+		System.out.println();
+		System.out.println("*************************************");
+		System.out.println("* 1 - Create Auction Item           *");
+		System.out.println("* 2 - Bid Item                      *");
+		System.out.println("* 3 - List All Items                *");
+		System.out.println("* 4 - List Available Items          *");
+		System.out.println("* 5 - List My Biddings              *");
+		System.out.println("* 6 - Quit                          *");
+		System.out.println("*************************************");
+
+	}
+
+	private boolean login (String name) throws Exception {
+
+		// send name to server
+
+		if ((me = server.login(name, this)) == null) {
+			// login failed
+			return false;
+		}
+		return true;
+
+	}
+
+	private void logout () throws Exception {
+		server.logout(me);
+	}
+
+	private void newItem () {
+		System.out.println("New item");
+	}
+
+	private void bid () {
+		System.out.println("Bid");
+	}
+
+	private void listAll () {
+		System.out.println("listAll");
+	}
+
+	public void listAvailable () {
+		System.out.println("listAvailable");
+	}
+
+	public void listMy () {
+		System.out.println("listMy");
+	}
+
+	public static void main(String[] args) throws Exception {
 		
 		Client client = new Client();
 		String name;
@@ -14,12 +72,13 @@ public class Client {
 		do {
 			System.out.print("Username: ");
 			name = System.console().readLine();
-		} while (!name.equals(TypesNConst.EXIT_CODE) && !client.loggin(name));
+		} while (!name.equals(TypesNConst.EXIT_CODE) && !client.login(name));
 
-		for (;;) {
+		while (true) {
 			// show the options
+			print_options();
 			System.out.println("Enter option: ");
-			
+
 			String opt = System.console().readLine();
 			if ((option = TypesNConst.UserOptions.fromString(opt)) == null) {
 				try {
@@ -47,55 +106,13 @@ public class Client {
 					case QUIT:
 						// close the conection with the server and quits
 						System.out.println("Bye");
-						client.loggout();
+						client.logout();
 						return;
 				}
 			} else
 				System.out.println("Inexistent option, try again");
 		}
 
-	}
-
-	public boolean loggin (String name) {
-
-		// send name to server
-
-		/*
-		if ((me = serverLogin(name)) == null) {
-			// login failed
-			return false;
-		}
-		*/
-		
-		// mockup simulating success
-		me = new User(name);
-
-		return true;
-
-	}
-
-	public void loggout () {
-
-	}
-
-	public void newItem () {
-		System.out.println("New item");
-	}
-
-	public void bid () {
-		System.out.println("Bid");
-	}
-
-	public void listAll () {
-		System.out.println("listAll");
-	}
-
-	public void listAvailable () {
-		System.out.println("listAvailable");
-	}
-
-	public void listMy () {
-		System.out.println("listMy");
 	}
 
 }

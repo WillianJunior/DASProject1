@@ -3,12 +3,14 @@ import java.util.GregorianCalendar;
 
 public class Item {
 	
+	private int id; // the server should be responsable for items id generation
 	private String name;
 	private float minimumValue;
 	private Calendar closingDatetime;
 	private Calendar removalDatetime;
 
-	public Item (String name, float minimumValue, Calendar closingDatetime) {
+	public Item (int id, String name, float minimumValue, Calendar closingDatetime) {
+		this.id = id;
 		this.name = name;
 		this.minimumValue = minimumValue;
 		this.closingDatetime = closingDatetime;
@@ -16,7 +18,8 @@ public class Item {
 		removalDatetime.add(Calendar.MINUTE, TypesNConst.MAX_ITEM_REMOVAL_TIME);
 	}
 
-	public Item (String name, float minimumValue, Calendar closingDatetime, Calendar removalDatetime) {
+	public Item (int id, String name, float minimumValue, Calendar closingDatetime, Calendar removalDatetime) {
+		this.id = id;
 		this.name = name;
 		this.minimumValue = minimumValue;
 		this.closingDatetime = closingDatetime;
@@ -25,6 +28,10 @@ public class Item {
 
 	public void updateMinValue (float minimumValue) {
 		this.minimumValue = minimumValue;
+	}
+
+	public int getId () {
+		return id;
 	}
 
 	public String getName () {

@@ -28,7 +28,7 @@ public class CentralServer
 	}
 
 	// log an user in the server by instanciating a new User
-	public User login (String username, Client client) throws Exception{
+	public User login (String username, RmiClientCallbackIntf client) throws Exception{
 		
 		User user = findUser(username);
 
@@ -36,13 +36,16 @@ public class CentralServer
 			System.out.println("[login] new user: " + username);
 			user = new User(username, client);
 			users.add(user);
-			return user;
 		} else {
 			System.out.println("[login] user exists");
 			user.connect(client);
-			return user;
 		}
 		
+		System.out.println("[login] here");
+		client.newItem();
+		System.out.println("[login] here2");
+
+		return user;
 	}
 
 	public void logout (User user) throws Exception {
@@ -51,8 +54,19 @@ public class CentralServer
 		u.disconnect();
 	}
 
-	public void createAuction (Item item, User user, Calendar closingDatetime, Calendar removalDatetime) throws Exception {
+	public void createAuctionItem (User user, String name, float minimumValue, Calendar closingDatetime, Calendar removalDatetime) throws Exception {
 		
+		// create an item
+		Item item  = new Item(getUniqueItemId(), name, minimumValue);
+
+		// create an auction
+		Auction auction = new Auction(getUniqueAuctionId(), item, user, closingDatetime, removalDatetime);
+
+		// start auction thread
+		// update auction with its thread
+		// insert the auction into the list
+
+		/*
 		synchronized (auctions) { // is there a better way to be sure that there will never be two auctions access at the same time?
 			Auction auction = findAuction(item, user);
 
@@ -63,11 +77,11 @@ public class CentralServer
 				//openAuctions.add(auction);
 
 				// this was supposed to pass the reference of the recently created auction
-				new Thread(new ServerAuctionThread(auctions.get(auctions.getIndex(auction))));
+				//new Thread(new ServerAuctionThread(auctions.get(auctions.getIndex(auction))));
 				
 			} else
 				throw new Exception ("This auction already exists");
-		}
+		}*/
 
 	}
 
@@ -112,6 +126,10 @@ public class CentralServer
 		return null;
 	}
 
+	private int getUniqueItemId () {
+		return itemIdCounter++;
+	}
+
 	private int getUniqueAuctionId () {
 		return auctionIdCounter++;
 	}
@@ -132,10 +150,10 @@ public class CentralServer
         }
  
         //Instantiate RmiServer
-        Server obj = new Server();
+        CentralServer obj = new CentralServer();
  
         // Bind this object instance to the name "RmiServer"
-        Naming.rebind("//localhost/Server", obj);
+        Naming.rebind("//localhost/CentralServer", obj);
         System.out.println("PeerServer bound in registry");
 
 	}

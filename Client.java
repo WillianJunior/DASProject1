@@ -1,15 +1,21 @@
+import java.rmi.server.UnicastRemoteObject;
 import java.rmi.Naming;
+import java.rmi.RemoteException;
 
 import java.io.Serializable;
 
-public class Client implements Serializable {
+public class Client 
+	extends UnicastRemoteObject
+	implements Serializable, RmiClientCallbackIntf 
+			{
 	
 	private User me;
 	private RmiServerIntf server;
 
 	public Client () throws Exception {
+		super(0);
 		me = null;
-		server = (RmiServerIntf)Naming.lookup("//localhost/Server");
+		server = (RmiServerIntf)Naming.lookup("//localhost/CentralServer");
 	}
 
 	private static void print_options () {
@@ -41,8 +47,10 @@ public class Client implements Serializable {
 		server.logout(me);
 	}
 
-	private void newItem () {
-		System.out.println("New item");
+	public void newItem () throws RemoteException {
+		//System.out.println("New item");
+		System.out.println("callback test");
+
 	}
 
 	private void bid () {
@@ -74,12 +82,12 @@ public class Client implements Serializable {
 			System.out.print("Username: ");
 			name = System.console().readLine();
 
-			try {
+			//try {
 				client.login(name);
-			} catch (Exception e) {
-				System.out.println(e.getMessage());
-				name = null; // probably there is a better way to signal inside the while that an exception just occured
-			}
+			//} catch (Exception e) {
+			//	System.out.println(e.getMessage());
+			//	name = null; // probably there is a better way to signal inside the while that an exception just occured
+			//}
 			
 		} while (name == null);
 
@@ -116,6 +124,7 @@ public class Client implements Serializable {
 						// close the conection with the server and quits
 						System.out.println("Bye");
 						client.logout();
+						UnicastRemoteObject.unexportObject(client, true);
 						return;
 				}
 			} else

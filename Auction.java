@@ -5,7 +5,6 @@ public class Auction {
 	private int id;
 	private Item item;
 	private User owner;
-	private List<User> bidders;
 	private boolean closed;
 	private Calendar closingDatetime;
 	private Calendar removalDatetime;
@@ -14,7 +13,6 @@ public class Auction {
 		this.id = id;
 		this.item = item;
 		this.owner = owner;
-		bidders = new ArrayList<User>();
 		closed = false;
 		this.closingDatetime = closingDatetime;
 		if (removalDatetime == null) {

@@ -5,9 +5,9 @@ public class User implements Serializable {
 	
 	private String name;
 	private boolean connected;
-	private Client client;
+	private RmiClientCallbackIntf client;
 
-	public User (String name, Client client) {
+	public User (String name, RmiClientCallbackIntf client) {
 		this.name = name;
 		this.client = client;
 		connected = true;
@@ -21,7 +21,7 @@ public class User implements Serializable {
 		return connected;
 	}
 
-	public void connect (Client client) throws Exception {
+	public void connect (RmiClientCallbackIntf client) throws Exception {
 		if (!connected) {
 			this.client = client;
 			connected = true;
@@ -37,12 +37,12 @@ public class User implements Serializable {
 			throw new Exception ("Client already disconnected");
 	}
 
-	public Client getClient () {
+	public RmiClientCallbackIntf getClient () {
 		return client;
 	}
 
 	public String getName () {
 		return name;
 	}
-	
+
 }

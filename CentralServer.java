@@ -28,7 +28,7 @@ public class CentralServer
 	}
 
 	// log an user in the server by instanciating a new User
-	public User login (String username, RmiClientCallbackIntf client) throws Exception{
+	public User login (String username, RmiClientCallbackIntf client) throws Exception, RemoteException {
 		
 		User user = findUser(username);
 
@@ -40,21 +40,17 @@ public class CentralServer
 			System.out.println("[login] user exists");
 			user.connect(client);
 		}
-		
-		System.out.println("[login] here");
-		client.newItem();
-		System.out.println("[login] here2");
 
 		return user;
 	}
 
-	public void logout (User user) throws Exception {
+	public void logout (User user) throws Exception, RemoteException {
 		User u = findUser(user);
 		System.out.println("[logout] " + u.getName());
 		u.disconnect();
 	}
 
-	public void createAuctionItem (User user, String name, float minimumValue, Calendar closingDatetime, Calendar removalDatetime) throws Exception {
+	public void createAuctionItem (User user, String name, float minimumValue, Calendar closingDatetime, Calendar removalDatetime) throws Exception, RemoteException {
 		
 		// create an item
 		Item item  = new Item(getUniqueItemId(), name, minimumValue);
@@ -84,6 +80,23 @@ public class CentralServer
 		}*/
 
 	}
+
+	public List<Auction> getAllAuctions () throws RemoteException {
+		return auctions;
+	}
+
+	public List<Auction> getOpenAuctions () throws RemoteException {
+		
+		List<Auction> openAuctions = new ArrayList<Auction>();
+
+		for (Auction a : auctions) {
+			if (!a.isClosed()) {
+				openAuctions.add(a);
+			}
+		}
+
+		return openAuctions;
+	}	
 
 	private User findUser (String username) {
 		for (User u : users) {

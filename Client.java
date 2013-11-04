@@ -1,18 +1,19 @@
+import java.util.*;
+
 import java.rmi.server.UnicastRemoteObject;
-import java.rmi.Naming;
 import java.rmi.RemoteException;
+import java.rmi.Naming;
 
 import java.io.Serializable;
 
 public class Client 
-	extends UnicastRemoteObject
-	implements Serializable, RmiClientCallbackIntf 
-			{
+		extends UnicastRemoteObject
+		implements Serializable, RmiClientCallbackIntf {
 	
 	private User me;
 	private RmiServerIntf server;
 
-	public Client () throws Exception {
+	public Client () throws Exception, RemoteException {
 		super(0);
 		me = null;
 		server = (RmiServerIntf)Naming.lookup("//localhost/CentralServer");
@@ -48,21 +49,34 @@ public class Client
 	}
 
 	public void newItem () throws RemoteException {
-		//System.out.println("New item");
-		System.out.println("callback test");
-
+		System.out.println("New item");
 	}
 
 	private void bid () {
 		System.out.println("Bid");
 	}
 
-	private void listAll () {
-		System.out.println("listAll");
+	private void listAll () throws RemoteException {
+		
+		List<Auction> auctions = server.getAllAuctions();	
+		
+		if (auctions.size() > 0)
+			for (Auction a : auctions)
+				System.out.println(a.prettyPrint());
+		else
+			System.out.println("There are no auctions at the moment");
+
 	}
 
-	public void listAvailable () {
-		System.out.println("listAvailable");
+	public void listAvailable () throws RemoteException {
+		
+		List<Auction> auctions = server.getOpenAuctions();
+		
+		if (auctions.size() > 0)
+			for (Auction a : auctions)
+				System.out.println(a.prettyPrint());
+		else
+			System.out.println("There are no open auctions at the moment");
 	}
 
 	public void listMy () {

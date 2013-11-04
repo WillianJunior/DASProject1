@@ -17,7 +17,7 @@ public class CentralServer
 	private int auctionIdCounter; // TODO: migrate the auction and item creation to a factory
 	private int itemIdCounter;
 
-	public Server () throws RemoteException {
+	public CentralServer () throws RemoteException {
 		super(0);
 		users = new ArrayList<User>();
 		auctions = new ArrayList<Auction>();

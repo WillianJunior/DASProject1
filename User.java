@@ -5,13 +5,11 @@ public class User implements Serializable {
 	
 	private String name;
 	private boolean connected;
-	private Map<Item, TypesNConst.UserType> items;
 	private Client client;
 
 	public User (String name, Client client) {
 		this.name = name;
 		this.client = client;
-		items = new HashMap<Item, TypesNConst.UserType>();
 		connected = true;
 	}
 
@@ -46,17 +44,5 @@ public class User implements Serializable {
 	public String getName () {
 		return name;
 	}
-
-	// item that the user is bidding
-	public void newBidableItem (Item item) {
-		items.put(item, TypesNConst.UserType.BIDDER);
-	}
-
-	// item that the user want to sell
-	public void newSellingItem (Item item) {
-		items.put(item, TypesNConst.UserType.OWNER);
-	}
-
-
-
+	
 }

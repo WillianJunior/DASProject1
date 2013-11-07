@@ -5,17 +5,15 @@ public class Auction implements Serializable {
 	
 	private int id;
 	private Item item;
-	private RmiClientCallbackIntf clientCallback;
 	private User owner;
 	private boolean closed;
 	private Calendar closingDatetime;
 	private Calendar removalDatetime;
 
-	public Auction (int id, Item item, RmiClientCallbackIntf clientCallback, User owner, Calendar closingDatetime, Calendar removalDatetime) {
+	public Auction (int id, Item item, User owner, Calendar closingDatetime, Calendar removalDatetime) {
 		this.id = id;
 		this.item = item;
 		this.owner = owner;
-		this.clientCallback = clientCallback;
 		closed = false;
 		this.closingDatetime = closingDatetime;
 		if (removalDatetime == null) {
@@ -71,12 +69,12 @@ public class Auction implements Serializable {
 		item.updateCurrentValue(newValue);
 	}
 
-	public RmiClientCallbackIntf getOwnerCallback() {
-		return clientCallback;
-	}
-
 	public Item getItem () {
 		return item;
+	}
+
+	public User getOwner () {
+		return owner;
 	}
 
 }

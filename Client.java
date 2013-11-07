@@ -50,18 +50,26 @@ public class Client
 
 	public void newItem () throws RemoteException {
 		
+		//System.out.println("New item");
 		String itemName = "test";
 		float minimumValue = 100;
 		Calendar closingDatetime = GregorianCalendar.getInstance();
 		closingDatetime.add(Calendar.MINUTE, 2);
 		Calendar removalDatetime = GregorianCalendar.getInstance();
 		closingDatetime.add(Calendar.MINUTE, 5);
-		//System.out.println("New item");
-		server.createAuctionItem (this, me, itemName, minimumValue, closingDatetime, removalDatetime);
+		server.createAuctionItem (me, itemName, minimumValue, closingDatetime, removalDatetime);
 	}
 
-	private void bid () {
-		System.out.println("Bid");
+	private void bid () throws RemoteException {
+		//System.out.println("Bid");
+		int auctionId = 0;
+		float value = 120;
+		System.out.print("bid: ");
+		String bid = System.console().readLine();
+		value = Float.parseFloat(bid);
+		System.out.println();
+		RmiAuctionThreadIntf auctionThread = server.getAuctionThread(auctionId);
+		auctionThread.bid(value, me);
 	}
 
 	private void listAll () throws RemoteException {

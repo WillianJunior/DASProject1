@@ -41,6 +41,11 @@ public class CentralServer
 			user.connect(client);
 		}
 
+		// broadcast to all auctions threads that the user is connected, so callback is needed and shoud be ennabled again
+		for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : auctions.entrySet()) {
+			entry.getValue().notifyUserLogin(user);
+		}
+
 		return user;
 	}
 
@@ -48,15 +53,20 @@ public class CentralServer
 		User u = findUser(user);
 		System.out.println("[logout] " + u.getName());
 		u.disconnect();
+
+		// broadcast to all auctions threads that the user is disconected, so no callback is needed
+		for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : auctions.entrySet()) {
+			entry.getValue().notifyUserLogout(u);
+		}
 	}
 
-	public void createAuctionItem (RmiClientCallbackIntf clientCallback, User user, String name, float minimumValue, Calendar closingDatetime, Calendar removalDatetime) throws RemoteException {
+	public void createAuctionItem (User user, String name, float minimumValue, Calendar closingDatetime, Calendar removalDatetime) throws RemoteException {
 		
 		// create an item
 		Item item  = new Item(getUniqueItemId(), name, minimumValue);
 
 		// create an auction
-		Auction auction = new Auction(getUniqueAuctionId(), item, clientCallback, user, closingDatetime, removalDatetime);
+		Auction auction = new Auction(getUniqueAuctionId(), item, user, closingDatetime, removalDatetime);
 
 		// start auction thread
 		Runnable auctionThread = new AuctionThread(auction);

@@ -1,5 +1,6 @@
 import java.util.*;
 import java.io.Serializable;
+import java.rmi.RemoteException;
 
 public class User implements Serializable {
 	

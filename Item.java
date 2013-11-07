@@ -1,7 +1,9 @@
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
-public class Item {
+import java.io.Serializable;
+
+public class Item implements Serializable {
 	
 	private int id; // the server should be responsable for items id generation
 	private String name;
@@ -33,6 +35,12 @@ public class Item {
 	
 	public float getCurrentValue () {
 		return currentValue;
+	}
+
+	public String toString () {
+		return ("Item no " + Integer.toString(id) + ": " + name + 
+			". Initial value: " + Float.toString(minimumValue) + 
+			". Current Value: " + Float.toString(currentValue) + ".");
 	}
 
 }

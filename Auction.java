@@ -1,18 +1,21 @@
 import java.util.*;
+import java.io.Serializable;
 
-public class Auction {
+public class Auction implements Serializable {
 	
 	private int id;
 	private Item item;
+	private RmiClientCallbackIntf clientCallback;
 	private User owner;
 	private boolean closed;
 	private Calendar closingDatetime;
 	private Calendar removalDatetime;
 
-	public Auction (int id, Item item, User owner, Calendar closingDatetime, Calendar removalDatetime) {
+	public Auction (int id, Item item, RmiClientCallbackIntf clientCallback, User owner, Calendar closingDatetime, Calendar removalDatetime) {
 		this.id = id;
 		this.item = item;
 		this.owner = owner;
+		this.clientCallback = clientCallback;
 		closed = false;
 		this.closingDatetime = closingDatetime;
 		if (removalDatetime == null) {
@@ -52,8 +55,28 @@ public class Auction {
 		return (item.equals(this.item) && owner.equals(this.owner));
 	}
 
-	public String prettyPrint () {
+	public String toString () {
 		return ("Auction number " + Integer.toString(id) + ". Item: " + item.getName() + ". Owner: " + owner.getName() + ".");
+	}
+
+	public String getStatus () {
+		return ("Current value: " + item.getCurrentValue() + ". Auction closes at " + closingDatetime.toString());
+	}
+
+	public float getCurrentValue () {
+		return item.getCurrentValue();
+	}
+
+	public void updateCurrentValue (float newValue) {
+		item.updateCurrentValue(newValue);
+	}
+
+	public RmiClientCallbackIntf getOwnerCallback() {
+		return clientCallback;
+	}
+
+	public Item getItem () {
+		return item;
 	}
 
 }

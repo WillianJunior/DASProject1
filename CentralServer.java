@@ -11,7 +11,7 @@ public class CentralServer
     implements RmiServerIntf {
 	
 	private List<User> users;
-	private volatile List<Auction> auctions;
+	private volatile Map<Auction, RmiAuctionThreadIntf> auctions;
 	//private volatile List<Auction> openAuctions; // references the auction list
 	//private volatile List<Auction> closedAuctions; // references the auction list: auctions = openAuctions + closedAuctions : do it later
 	private int auctionIdCounter; // TODO: migrate the auction and item creation to a factory
@@ -20,7 +20,7 @@ public class CentralServer
 	public CentralServer () throws RemoteException {
 		super(0);
 		users = new ArrayList<User>();
-		auctions = new ArrayList<Auction>();
+		auctions = new HashMap<Auction, RmiAuctionThreadIntf>();
 		//openAuctions = new ArrayList<Auction>();
 		//closedAuctions = new ArrayList<Auction>();
 		itemIdCounter = 0;
@@ -50,17 +50,20 @@ public class CentralServer
 		u.disconnect();
 	}
 
-	public void createAuctionItem (User user, String name, float minimumValue, Calendar closingDatetime, Calendar removalDatetime) throws Exception, RemoteException {
+	public void createAuctionItem (RmiClientCallbackIntf clientCallback, User user, String name, float minimumValue, Calendar closingDatetime, Calendar removalDatetime) throws RemoteException {
 		
 		// create an item
 		Item item  = new Item(getUniqueItemId(), name, minimumValue);
 
 		// create an auction
-		Auction auction = new Auction(getUniqueAuctionId(), item, user, closingDatetime, removalDatetime);
+		Auction auction = new Auction(getUniqueAuctionId(), item, clientCallback, user, closingDatetime, removalDatetime);
 
 		// start auction thread
-		// update auction with its thread
+		Runnable auctionThread = new AuctionThread(auction);
+		new Thread(auctionThread).start();
+
 		// insert the auction into the list
+		auctions.put(auction, (RmiAuctionThreadIntf)auctionThread);
 
 		/*
 		synchronized (auctions) { // is there a better way to be sure that there will never be two auctions access at the same time?
@@ -82,6 +85,12 @@ public class CentralServer
 	}
 
 	public List<Auction> getAllAuctions () throws RemoteException {
+		
+		List<Auction> auctions = new ArrayList<Auction>();
+		
+		for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : this.auctions.entrySet())
+			auctions.add(entry.getKey());
+
 		return auctions;
 	}
 
@@ -89,14 +98,24 @@ public class CentralServer
 		
 		List<Auction> openAuctions = new ArrayList<Auction>();
 
-		for (Auction a : auctions) {
-			if (!a.isClosed()) {
-				openAuctions.add(a);
-			}
-		}
+		for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : this.auctions.entrySet())
+			if (!entry.getKey().isClosed())
+				openAuctions.add(entry.getKey());
 
 		return openAuctions;
 	}	
+
+	public RmiAuctionThreadIntf getAuctionThread (int auctionId) throws RemoteException {
+		
+		for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : this.auctions.entrySet()) {
+			if (entry.getKey().getId() == auctionId && !entry.getKey().isClosed()) {
+				return entry.getValue();
+			}
+		}
+
+		return null;
+
+	}
 
 	private User findUser (String username) {
 		for (User u : users) {
@@ -120,22 +139,22 @@ public class CentralServer
 
 	// this will probably be merged with find user to create a generic functions (yes, with generics)
 	private Auction findAuction (Auction auction) {
-		for (Auction a : auctions) {
-			if (a.equals(auction)) {
-				System.out.println("[findAuction] found: " + a.prettyPrint());
-				return a;
+		for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : this.auctions.entrySet())
+			if (entry.getKey().equals(auction)) {
+				System.out.println("[findAuction] found: " + entry.getKey().toString());
+				return entry.getKey();
 			}
-		}
+		
 		return null;
 	}
 
 	private Auction findAuction (Item item, User owner) {
-		for (Auction a : auctions) {
-			if (a.equals(item, owner)) {
-				System.out.println("[findAuction] found: " + a.prettyPrint());
-				return a;
+		for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : this.auctions.entrySet())
+			if (entry.getKey().equals(item, owner)) {
+				System.out.println("[findAuction] found: " + entry.getKey().toString());
+				return entry.getKey();
 			}
-		}
+		
 		return null;
 	}
 

@@ -49,7 +49,15 @@ public class Client
 	}
 
 	public void newItem () throws RemoteException {
-		System.out.println("New item");
+		
+		String itemName = "test";
+		float minimumValue = 100;
+		Calendar closingDatetime = GregorianCalendar.getInstance();
+		closingDatetime.add(Calendar.MINUTE, 2);
+		Calendar removalDatetime = GregorianCalendar.getInstance();
+		closingDatetime.add(Calendar.MINUTE, 5);
+		//System.out.println("New item");
+		server.createAuctionItem (this, me, itemName, minimumValue, closingDatetime, removalDatetime);
 	}
 
 	private void bid () {
@@ -62,7 +70,7 @@ public class Client
 		
 		if (auctions.size() > 0)
 			for (Auction a : auctions)
-				System.out.println(a.prettyPrint());
+				System.out.println(a.toString());
 		else
 			System.out.println("There are no auctions at the moment");
 
@@ -74,13 +82,17 @@ public class Client
 		
 		if (auctions.size() > 0)
 			for (Auction a : auctions)
-				System.out.println(a.prettyPrint());
+				System.out.println(a.toString());
 		else
 			System.out.println("There are no open auctions at the moment");
 	}
 
 	public void listMy () {
 		System.out.println("listMy");
+	}
+
+	public void auctionBiddingUpdate (Item item) throws RemoteException {
+		System.out.println(item.toString());
 	}
 
 	public static void main(String[] args) throws Exception {

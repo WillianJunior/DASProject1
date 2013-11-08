@@ -56,7 +56,7 @@ public class Client
 		Calendar closingDatetime = GregorianCalendar.getInstance();
 		closingDatetime.add(Calendar.MINUTE, 2);
 		Calendar removalDatetime = GregorianCalendar.getInstance();
-		closingDatetime.add(Calendar.MINUTE, 5);
+		removalDatetime.add(Calendar.MINUTE, 5);
 		server.createAuctionItem (me, itemName, minimumValue, closingDatetime, removalDatetime);
 	}
 
@@ -101,6 +101,10 @@ public class Client
 
 	public void auctionBiddingUpdate (Item item) throws RemoteException {
 		System.out.println(item.toString());
+	}
+
+	public void auctionClosed (String message) throws RemoteException {
+		System.out.println(message);
 	}
 
 	public static void main(String[] args) throws Exception {

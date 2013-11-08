@@ -12,5 +12,6 @@ public interface RmiServerIntf extends Remote {
 	public List<Auction> getAllAuctions () throws RemoteException;
 	public List<Auction> getOpenAuctions () throws RemoteException;
 	public RmiAuctionThreadIntf getAuctionThread (int auctionId) throws RemoteException;
+	public void removeAuction (Auction auction) throws RemoteException;
 
 }

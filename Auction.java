@@ -45,6 +45,10 @@ public class Auction implements Serializable {
 		return closingDatetime;
 	}
 
+	public Calendar getRemovalDate () {
+		return removalDatetime;
+	}
+
 	public boolean equals (Auction auction) {
 		return id == auction.getId();
 	}
@@ -63,6 +67,10 @@ public class Auction implements Serializable {
 
 	public float getCurrentValue () {
 		return item.getCurrentValue();
+	}
+
+	public float getMinimumValue () {
+		return item.getMinimumValue();
 	}
 
 	public void updateCurrentValue (float newValue) {

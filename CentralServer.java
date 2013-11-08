@@ -11,7 +11,23 @@ public class CentralServer
     implements RmiServerIntf {
 	
 	private List<User> users;
-	private volatile Map<Auction, RmiAuctionThreadIntf> auctions;
+	
+	/* volatile Map<Auction, RmiAuctionThreadIntf> auctions
+	 * This variable have two fields, the auction object and the thread 
+	 * reference for RMI.
+	 * The thread reference can only be set by the main thread (this, 
+	 * the central server), so, it do not need any type of lock to access it
+	 * since this is the only thread that can make insertions and deletions, 
+	 * no lock is needed to any crd (crud minus the update) operation.
+	 * The only lock that would be needed is the one to guarantee that no 
+	 * two threads would access the same auction at the same time.
+	 * The central server only access the auctions on the map to return the 
+	 * list of auctions to the client, and the threads updates the auctions
+	 * However, since the only update (so far...) is the min value update, 
+	 * that is done atomicly (is it?), no lock is needed there as well.
+	 * Concluding: auctions is safe and don't need any lock (yet...).
+	 */
+	private volatile Map<Auction, RmiAuctionThreadIntf> auctions; 
 	//private volatile List<Auction> openAuctions; // references the auction list
 	//private volatile List<Auction> closedAuctions; // references the auction list: auctions = openAuctions + closedAuctions : do it later
 	private int auctionIdCounter; // TODO: migrate the auction and item creation to a factory
@@ -69,7 +85,7 @@ public class CentralServer
 		Auction auction = new Auction(getUniqueAuctionId(), item, user, closingDatetime, removalDatetime);
 
 		// start auction thread
-		Runnable auctionThread = new AuctionThread(auction);
+		Runnable auctionThread = new AuctionThread(auction, this);
 		new Thread(auctionThread).start();
 
 		// insert the auction into the list
@@ -127,6 +143,10 @@ public class CentralServer
 
 	}
 
+	public void removeAuction (Auction auction) throws RemoteException {
+		auctions.remove(auction);
+	}
+
 	private User findUser (String username) {
 		for (User u : users) {
 			if (u.getName().equals(username)) {
@@ -148,6 +168,7 @@ public class CentralServer
 	}
 
 	// this will probably be merged with find user to create a generic functions (yes, with generics)
+	/*
 	private Auction findAuction (Auction auction) {
 		for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : this.auctions.entrySet())
 			if (entry.getKey().equals(auction)) {
@@ -167,6 +188,7 @@ public class CentralServer
 		
 		return null;
 	}
+	*/
 
 	private int getUniqueItemId () {
 		return itemIdCounter++;

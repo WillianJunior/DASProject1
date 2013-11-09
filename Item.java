@@ -5,13 +5,11 @@ import java.io.Serializable;
 
 public class Item implements Serializable {
 	
-	private int id; // the server should be responsable for items id generation
 	private String name;
 	private float minimumValue;
 	private float currentValue;
 
-	public Item (int id, String name, float minimumValue) {
-		this.id = id;
+	public Item (String name, float minimumValue) {
 		this.name = name;
 		this.minimumValue = minimumValue;
 		currentValue = minimumValue;
@@ -19,10 +17,6 @@ public class Item implements Serializable {
 
 	public void updateCurrentValue (float currentValue) {
 		this.currentValue = currentValue;
-	}
-
-	public int getId () {
-		return id;
 	}
 
 	public String getName () {
@@ -38,7 +32,7 @@ public class Item implements Serializable {
 	}
 
 	public String toString () {
-		return ("Item no " + Integer.toString(id) + ": " + name + 
+		return ("Item: " + name + 
 			". Initial value: " + Float.toString(minimumValue) + 
 			". Current Value: " + Float.toString(currentValue) + ".");
 	}

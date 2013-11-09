@@ -8,14 +8,16 @@ public class AuctionThread
 		extends UnicastRemoteObject
 		implements Serializable, RmiAuctionThreadIntf, Runnable {
 
-	private volatile Auction auction;
+	private Auction auction;
 	private List<User> bidders;
 	private User highestBidder;
+	private CentralServer server;
 	private boolean open;
 
 	public AuctionThread (Auction auction, CentralServer server) throws RemoteException {
 		super(0);
-		this.auction = auction; // not referencing the map value
+		this.auction = auction;
+		this.server = server;
 		bidders = new ArrayList<User>();
 		highestBidder = null;
 		open = true;
@@ -24,8 +26,11 @@ public class AuctionThread
 
 	}
 
-	public synchronized boolean bid (float value, User bidder) throws RemoteException {
+	public synchronized TypesNConst.BiddingReturns bid (float value, User bidder) throws RemoteException {
 		
+		try {
+			Thread.sleep(2000); // simulate the delay
+		} catch (Exception e) {System.out.println(e.getMessage());}
 		if (open) {
 			// add bidder to the bidders list only if it isn't already there
 			if (findUser(bidder) == null)
@@ -39,15 +44,15 @@ public class AuctionThread
 				// notify the owner only if he is online
 				if (auction.getOwner().isConnected())
 					auction.getOwner().getClient().auctionBiddingUpdate(auction.getItem());
-				System.out.println("[AuctionThread.bid] bid is valid for item " + Integer.toString(auction.getItem().getId()) + ". new value: " + Float.toString(auction.getCurrentValue()));
-				return true;
+				System.out.println("[AuctionThread.bid] bid is valid for item " + auction.getItem().getName() + ". new value: " + Float.toString(auction.getCurrentValue()));
+				return TypesNConst.BiddingReturns.NO_ERROR;
 			} else {
 				System.out.println("[AuctionThread.bid] bid not valid, lower than the minimum value");
-				return false;
+				return TypesNConst.BiddingReturns.VALUE_LOWER;
 			}
 		}
 
-		return false;
+		return TypesNConst.BiddingReturns.AUCTION_CLOSED;
 	}
 
 	public void	notifyUserLogin (User user) throws RemoteException, Exception {
@@ -60,32 +65,39 @@ public class AuctionThread
 			auction.getOwner().disconnect();
 	}
 
-	public Auction closeAuction () throws RemoteException {
+	public synchronized Auction closeAuction () throws RemoteException {
 
-		synchronized (this) { // does this guarantee that a bid cannot happen when the auction is closing?
-			String[] auctionResult = {"Auction no " + Integer.toString(auction.getId()) + " is closed", 
-					"Item no" + Integer.toString(auction.getItem().getId()) + ": " + auction.getItem().getName(),
-					"Owner: " + auction.getOwner().getName(),
-					"Original value: " + Float.toString(auction.getMinimumValue()),
-					"Item sold for " + Float.toString(auction.getCurrentValue()) + " to " + highestBidder.getName()};
-			String auctionWinner = "Congratulations, you are the auction no" + Integer.toString(auction.getId()) + " winner";
-			String noWinners = "No one bid on your item";
+		String[] auctionResult = {"Auction no" + Integer.toString(auction.getId()) + " is closed", 
+				"Item: " + auction.getItem().getName(),
+				"Owner: " + auction.getOwner().getName(),
+				"Original value: " + Float.toString(auction.getMinimumValue()),
+				"Item sold for " + Float.toString(auction.getCurrentValue()) + " to " + highestBidder.getName()};
+		String auctionWinner = "Congratulations, you are the auction no" + Integer.toString(auction.getId()) + " winner";
+		String noWinners = "No one bid on your item";
 
-			open = false;
-			UnicastRemoteObject.unexportObject(this, true);
-
-			if (highestBidder == null) {
-				auction.getOwner().getClient().auctionClosed(noWinners);
-			} else {
-				for (User u : bidders) {
-					for (String s : auctionResult) {
-						u.getClient().auctionClosed(s);
-					}
+		if (highestBidder == null) {
+			auction.getOwner().getClient().auctionClosed(noWinners);
+		} else {
+			for (User u : bidders) {
+				for (String s : auctionResult) {
+					u.getClient().auctionClosed(s);
 				}
-				highestBidder.getClient().auctionClosed(auctionWinner);
 			}
-			return auction;
+			highestBidder.getClient().auctionClosed(auctionWinner);
+			for (String s : auctionResult) {
+				auction.getOwner().getClient().auctionClosed(s);
+			}
 		}
+
+		open = false;
+		try {
+			auction.closeAuction();
+		} catch (Exception e) {System.out.println(e.getMessage());}
+
+		server.closeAuction(auction);
+		UnicastRemoteObject.unexportObject(this, true);
+
+		return auction;
 
 	}
 

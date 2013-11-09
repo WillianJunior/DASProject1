@@ -13,13 +13,18 @@ public class TypesNConst {
 		BIDDER
 	}
 
+	public static enum BiddingReturns {
+		AUCTION_CLOSED,
+		VALUE_LOWER,
+		NO_ERROR
+	}
+
 	public static enum UserOptions {
 		
 		CREATE_AUCTION_ITEM,
 		BID_ITEM,
 		LIST_ALL_ITEMS,
 		LIST_AVAILABLE_ITEMS,
-		LIST_MY_BIDDINGS,
 		QUIT;
 
 		static UserOptions fromInt (int option) {
@@ -33,8 +38,6 @@ public class TypesNConst {
 				case 4:
 					return LIST_AVAILABLE_ITEMS;
 				case 5:
-					return LIST_MY_BIDDINGS;
-				case 6:
 					return QUIT;
 				default:
 					return null;

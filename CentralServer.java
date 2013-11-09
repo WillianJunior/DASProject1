@@ -1,5 +1,6 @@
 import java.util.*;
 import java.lang.Thread.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import java.rmi.Naming;
 import java.rmi.RemoteException;
@@ -27,59 +28,64 @@ public class CentralServer
 	 * that is done atomicly (is it?), no lock is needed there as well.
 	 * Concluding: auctions is safe and don't need any lock (yet...).
 	 */
-	private volatile Map<Auction, RmiAuctionThreadIntf> auctions; 
+	private volatile Map<Auction, RmiAuctionThreadIntf> auctions;
 	//private volatile List<Auction> openAuctions; // references the auction list
 	//private volatile List<Auction> closedAuctions; // references the auction list: auctions = openAuctions + closedAuctions : do it later
 	private int auctionIdCounter; // TODO: migrate the auction and item creation to a factory
-	private int itemIdCounter;
 
 	public CentralServer () throws RemoteException {
 		super(0);
 		users = new ArrayList<User>();
 		auctions = new HashMap<Auction, RmiAuctionThreadIntf>();
-		//openAuctions = new ArrayList<Auction>();
-		//closedAuctions = new ArrayList<Auction>();
-		itemIdCounter = 0;
 		auctionIdCounter = 0;
 	}
 
-	// log an user in the server by instanciating a new User
+	/*************************************/
+	/** 			RMI Methods			**/
+	/*************************************/
+
+	// log an user in the server by instanciating a new User or connection an old one
 	public User login (String username, RmiClientCallbackIntf client) throws Exception, RemoteException {
 		
+		// search for the user to check if it needs either to be signed in or created
 		User user = findUser(username);
 
 		if (user == null) {
-			System.out.println("[login] new user: " + username);
+			// if the user is a new one, create it
+			System.out.println("[CentralServer.login] new user: " + username);
 			user = new User(username, client);
 			users.add(user);
 		} else {
-			System.out.println("[login] user exists");
+			// if the user is just loggin in
+			System.out.println("[CentralServer.login] user exists");
 			user.connect(client);
-		}
-
-		// broadcast to all auctions threads that the user is connected, so callback is needed and shoud be ennabled again
-		for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : auctions.entrySet()) {
-			entry.getValue().notifyUserLogin(user);
+			// broadcast to all auctions threads that the user is connected, so callback is needed and shoud be ennabled again
+			for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : auctions.entrySet())
+				entry.getValue().notifyUserLogin(user);
 		}
 
 		return user;
 	}
 
+	// log an user out, which means that no callback is needed
 	public void logout (User user) throws Exception, RemoteException {
+		
+		// find the user and update its state to disconnected
 		User u = findUser(user);
-		System.out.println("[logout] " + u.getName());
+		System.out.println("[CentralServer.logout] " + u.getName());
 		u.disconnect();
 
-		// broadcast to all auctions threads that the user is disconected, so no callback is needed
-		for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : auctions.entrySet()) {
+		// broadcast to all auctions threads that the user is disconected, so no callback shoud be disabled
+		for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : auctions.entrySet())
 			entry.getValue().notifyUserLogout(u);
-		}
+
 	}
 
+	// create a new item, an auction for the item and the needed threads to serve it
 	public void createAuctionItem (User user, String name, float minimumValue, Calendar closingDatetime, Calendar removalDatetime) throws RemoteException {
 		
 		// create an item
-		Item item  = new Item(getUniqueItemId(), name, minimumValue);
+		Item item  = new Item(name, minimumValue);
 
 		// create an auction
 		Auction auction = new Auction(getUniqueAuctionId(), item, user, closingDatetime, removalDatetime);
@@ -91,25 +97,9 @@ public class CentralServer
 		// insert the auction into the list
 		auctions.put(auction, (RmiAuctionThreadIntf)auctionThread);
 
-		/*
-		synchronized (auctions) { // is there a better way to be sure that there will never be two auctions access at the same time?
-			Auction auction = findAuction(item, user);
-
-			if (auction == null) {
-				System.out.println("[createAuction] new auction");
-				auction = new Auction(getUniqueAuctionId(), item, user, closingDatetime, removalDatetime);
-				auctions.add(auction);
-				//openAuctions.add(auction);
-
-				// this was supposed to pass the reference of the recently created auction
-				//new Thread(new ServerAuctionThread(auctions.get(auctions.getIndex(auction))));
-				
-			} else
-				throw new Exception ("This auction already exists");
-		}*/
-
 	}
 
+	// return all auctions
 	public List<Auction> getAllAuctions () throws RemoteException {
 		
 		List<Auction> auctions = new ArrayList<Auction>();
@@ -120,6 +110,7 @@ public class CentralServer
 		return auctions;
 	}
 
+	// return the open auctions that haven't been removed
 	public List<Auction> getOpenAuctions () throws RemoteException {
 		
 		List<Auction> openAuctions = new ArrayList<Auction>();
@@ -131,39 +122,57 @@ public class CentralServer
 		return openAuctions;
 	}	
 
+	// return the thread responsable for the auction represented by the auctionId. 
+	// this method can (and will) be called concurrently
 	public RmiAuctionThreadIntf getAuctionThread (int auctionId) throws RemoteException {
 		
-		for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : this.auctions.entrySet()) {
-			if (entry.getKey().getId() == auctionId && !entry.getKey().isClosed()) {
+		for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : this.auctions.entrySet())
+			if (entry.getKey().getId() == auctionId && !entry.getKey().isClosed())
 				return entry.getValue();
-			}
-		}
 
 		return null;
 
 	}
 
+	// remove the reference to the auction thread (this is an attempt to finish the auction thread)
+	public void closeAuction (Auction auction) throws RemoteException {
+		auctions.put(auction, null);
+	}
+
+	// remove an auction from the auction list
 	public void removeAuction (Auction auction) throws RemoteException {
-		auctions.remove(auction);
+		synchronized (auctions) {
+			auctions.remove(auction);
+		}
 	}
 
+	/*************************************/
+	/**		 	Helper Methods			**/
+	/*************************************/
+
+	// return an user given his username
 	private User findUser (String username) {
-		for (User u : users) {
+		for (User u : users)
 			if (u.getName().equals(username)) {
-				System.out.println("[findUser] found: " + u.getName());
+				System.out.println("[CentralServer.findUser] found: " + u.getName());
 				return u;
 			}
-		}
+		
 		return null;
 	}
+	
+	private int getUniqueAuctionId () {
+		return auctionIdCounter++;
+	}
 
+	// return an user using the equals as the comparison algorithm
 	private User findUser (User user) {
-		for (User u : users) {
+		for (User u : users) 
 			if (u.equals(user)) {
-				System.out.println("[findUser] found: " + u.getName());
+				System.out.println("[CentralServer.findUser] found: " + u.getName());
 				return u;
 			}
-		}
+		
 		return null;
 	}
 
@@ -190,13 +199,10 @@ public class CentralServer
 	}
 	*/
 
-	private int getUniqueItemId () {
-		return itemIdCounter++;
-	}
 
-	private int getUniqueAuctionId () {
-		return auctionIdCounter++;
-	}
+	/*************************************/
+	/** 	Main Server Methods 		**/
+	/*************************************/
 
 	public static void main(String[] args) throws Exception {
 		

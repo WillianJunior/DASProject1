@@ -26,8 +26,7 @@ public class Client
 		System.out.println("* 2 - Bid Item                      *");
 		System.out.println("* 3 - List All Items                *");
 		System.out.println("* 4 - List Available Items          *");
-		System.out.println("* 5 - List My Biddings              *");
-		System.out.println("* 6 - Quit                          *");
+		System.out.println("* 5 - Quit                          *");
 		System.out.println("*************************************");
 
 	}
@@ -69,7 +68,18 @@ public class Client
 		value = Float.parseFloat(bid);
 		System.out.println();
 		RmiAuctionThreadIntf auctionThread = server.getAuctionThread(auctionId);
-		auctionThread.bid(value, me);
+		
+		switch (auctionThread.bid(value, me)) {
+			case NO_ERROR:
+				System.out.print("You just bid " + Float.toString(value));
+				break;
+			case AUCTION_CLOSED:
+				System.out.print("This auction is already closed");
+				break;
+			case VALUE_LOWER: 
+				System.out.print("The bid value is lower or equal to the current item value");
+				break;
+		} 
 	}
 
 	private void listAll () throws RemoteException {
@@ -93,10 +103,6 @@ public class Client
 				System.out.println(a.toString());
 		else
 			System.out.println("There are no open auctions at the moment");
-	}
-
-	public void listMy () {
-		System.out.println("listMy");
 	}
 
 	public void auctionBiddingUpdate (Item item) throws RemoteException {
@@ -154,9 +160,6 @@ public class Client
 						break;
 					case LIST_AVAILABLE_ITEMS:
 						client.listAvailable();
-						break;
-					case LIST_MY_BIDDINGS:
-						client.listMy();
 						break;
 					case QUIT:
 						// close the conection with the server and quits

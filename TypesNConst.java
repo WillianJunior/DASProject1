@@ -6,6 +6,7 @@ public class TypesNConst {
 	public static final int MAX_ITEM_REMOVAL_TIME = 10; // in minutes
 
 	// String Constants
+	public static final String serverIp = "localhost";
 
 	// Enums
 	public static enum UserType {
@@ -14,9 +15,9 @@ public class TypesNConst {
 	}
 
 	public static enum BiddingReturns {
-		AUCTION_CLOSED,
 		VALUE_LOWER,
-		NO_ERROR
+		IS_OWNER,
+		SUCCESS
 	}
 
 	public static enum UserOptions {

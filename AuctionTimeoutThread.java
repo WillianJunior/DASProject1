@@ -17,24 +17,20 @@ public class AuctionTimeoutThread implements Runnable {
 
 	public void run () {
 		try {
-			System.out.println("[AuctionTimeoutThread] run");
-			System.out.println("[AuctionTimeoutThread] mill to first sleep: " + Long.toString(closingTime.getTimeInMillis() - GregorianCalendar.getInstance().getTimeInMillis()));
+			System.out.println("[AuctionTimeoutThread] millis to first sleep: " + Long.toString(closingTime.getTimeInMillis() - GregorianCalendar.getInstance().getTimeInMillis()));
 			try {
-				System.out.println("[AuctionTimeoutThread] first sleep");
-				Thread.sleep(closingTime.getTimeInMillis() - GregorianCalendar.getInstance().getTimeInMillis());
-				System.out.println("[AuctionTimeoutThread] done");
+				Thread.sleep((closingTime.getTimeInMillis() - GregorianCalendar.getInstance().getTimeInMillis())/10);
 			} catch (InterruptedException e) {}
 			Auction auction = auctionThread.closeAuction();
-			System.out.println("[AuctionTimeoutThread] mill to second sleep: " + Long.toString(removalTime.getTimeInMillis() - GregorianCalendar.getInstance().getTimeInMillis()));
+			server.closeAuction(auction);
+			System.out.println("[AuctionTimeoutThread] millis to second sleep: " + Long.toString(removalTime.getTimeInMillis() - GregorianCalendar.getInstance().getTimeInMillis()));
 			try {
-				System.out.println("[AuctionTimeoutThread] second sleep");
-				Thread.sleep(removalTime.getTimeInMillis() - GregorianCalendar.getInstance().getTimeInMillis());
-				System.out.println("[AuctionTimeoutThread] done");
+				Thread.sleep((removalTime.getTimeInMillis() - GregorianCalendar.getInstance().getTimeInMillis())/10);
 			} catch (InterruptedException e) {}
+			System.out.println("[AuctionTimeoutThread] i'm out");
 			server.removeAuction(auction);
-		} catch (RemoteException e) { /* need to fid out wht to do with this exeptions*/ }
+		} catch (RemoteException e) { /* need to find out wht to do with this exeptions*/ }
 
-		System.out.println("[AuctionTimeoutThread] i'm out");
 	}
 
 }

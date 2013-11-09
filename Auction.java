@@ -16,11 +16,12 @@ public class Auction implements Serializable {
 		this.owner = owner;
 		closed = false;
 		this.closingDatetime = closingDatetime;
-		if (removalDatetime == null) {
-			removalDatetime = GregorianCalendar.getInstance();
-			removalDatetime.add(Calendar.MINUTE, TypesNConst.MAX_ITEM_REMOVAL_TIME);
+		if (removalDatetime == null || ((removalDatetime.getTimeInMillis() - GregorianCalendar.getInstance().getTimeInMillis()) / 6000) > TypesNConst.MAX_ITEM_REMOVAL_TIME) {
+			this.removalDatetime = GregorianCalendar.getInstance();
+			this.removalDatetime.add(Calendar.MINUTE, TypesNConst.MAX_ITEM_REMOVAL_TIME);
 		} else
 			this.removalDatetime = removalDatetime;
+		System.out.println("[Auction.Auction] auction created: " + toString());
 	}
 
 	public int getId () {

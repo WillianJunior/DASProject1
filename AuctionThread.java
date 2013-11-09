@@ -12,7 +12,6 @@ public class AuctionThread
 	private List<User> bidders;
 	private User highestBidder;
 	private CentralServer server;
-	private boolean open;
 
 	public AuctionThread (Auction auction, CentralServer server) throws RemoteException {
 		super(0);
@@ -20,7 +19,6 @@ public class AuctionThread
 		this.server = server;
 		bidders = new ArrayList<User>();
 		highestBidder = null;
-		open = true;
 		// create the timeout and removal thread
 		new Thread(new AuctionTimeoutThread(this, server, auction.getClosingDate(), auction.getRemovalDate())).start();
 
@@ -28,31 +26,35 @@ public class AuctionThread
 
 	public synchronized TypesNConst.BiddingReturns bid (float value, User bidder) throws RemoteException {
 		
+		/*
 		try {
 			Thread.sleep(2000); // simulate the delay
 		} catch (Exception e) {System.out.println(e.getMessage());}
-		if (open) {
-			// add bidder to the bidders list only if it isn't already there
-			if (findUser(bidder) == null)
-				bidders.add(bidder);
+		*/
 
-			// check if the bid is valid
-			if (value > auction.getCurrentValue()) {
-				// if valid, update the value and notify (who do I notify?)
-				auction.updateCurrentValue(value);
-				highestBidder = bidder;
-				// notify the owner only if he is online
-				if (auction.getOwner().isConnected())
-					auction.getOwner().getClient().auctionBiddingUpdate(auction.getItem());
-				System.out.println("[AuctionThread.bid] bid is valid for item " + auction.getItem().getName() + ". new value: " + Float.toString(auction.getCurrentValue()));
-				return TypesNConst.BiddingReturns.NO_ERROR;
-			} else {
-				System.out.println("[AuctionThread.bid] bid not valid, lower than the minimum value");
-				return TypesNConst.BiddingReturns.VALUE_LOWER;
-			}
+		// check if the bidder is the owner
+		if (auction.getOwner().equals(bidder))
+			return TypesNConst.BiddingReturns.IS_OWNER;
+
+		// add bidder to the bidders list only if it isn't already there
+		if (findUser(bidder) == null)
+			bidders.add(bidder);
+
+		// check if the bid is valid
+		if (value > auction.getCurrentValue()) {
+			// if valid, update the value and notify (who do I notify?)
+			auction.updateCurrentValue(value);
+			highestBidder = bidder;
+			// notify the owner only if he is online
+			if (auction.getOwner().isConnected())
+				auction.getOwner().getClient().auctionBiddingUpdate(auction.getItem());
+			System.out.println("[AuctionThread.bid] bid is valid for item " + auction.getItem().getName() + ". new value: " + Float.toString(auction.getCurrentValue()));
+			return TypesNConst.BiddingReturns.SUCCESS;
+		} else {
+			System.out.println("[AuctionThread.bid] bid not valid, lower than the minimum value");
+			return TypesNConst.BiddingReturns.VALUE_LOWER;
 		}
 
-		return TypesNConst.BiddingReturns.AUCTION_CLOSED;
 	}
 
 	public void	notifyUserLogin (User user) throws RemoteException, Exception {
@@ -89,12 +91,10 @@ public class AuctionThread
 			}
 		}
 
-		open = false;
 		try {
 			auction.closeAuction();
 		} catch (Exception e) {System.out.println(e.getMessage());}
 
-		server.closeAuction(auction);
 		UnicastRemoteObject.unexportObject(this, true);
 
 		return auction;

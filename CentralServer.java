@@ -61,7 +61,10 @@ public class CentralServer
 			user.connect(client);
 			// broadcast to all auctions threads that the user is connected, so callback is needed and shoud be ennabled again
 			for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : auctions.entrySet())
-				entry.getValue().notifyUserLogin(user);
+				// check if the thread reference still exists before notifying
+				// e.g. auction is closed but not removed
+				if (entry.getValue() != null)
+					entry.getValue().notifyUserLogin(user);
 		}
 
 		return user;
@@ -77,7 +80,10 @@ public class CentralServer
 
 		// broadcast to all auctions threads that the user is disconected, so no callback shoud be disabled
 		for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : auctions.entrySet())
-			entry.getValue().notifyUserLogout(u);
+			// check if the thread reference still exists before notifying
+			// e.g. auction is closed but not removed
+			if (entry.getValue() != null)
+				entry.getValue().notifyUserLogout(u);
 
 	}
 
@@ -223,7 +229,7 @@ public class CentralServer
         CentralServer obj = new CentralServer();
  
         // Bind this object instance to the name "RmiServer"
-        Naming.rebind("//localhost/CentralServer", obj);
+        Naming.rebind("//" + TypesNConst.serverIp + "/CentralServer", obj);
         System.out.println("PeerServer bound in registry");
 
 	}

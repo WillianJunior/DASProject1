@@ -16,8 +16,28 @@ public class Client
 	public Client () throws Exception, RemoteException {
 		super(0);
 		me = null;
-		server = (RmiServerIntf)Naming.lookup("//localhost/CentralServer");
+		server = (RmiServerIntf)Naming.lookup("//" + TypesNConst.serverIp + "/CentralServer");
 	}
+
+	/*************************************/
+	/** 			RMI Methods			**/
+	/*************************************/
+
+	// print a message to the user updating him about an item that he is interested
+	// this method is called via RMI by the auction thread
+	public void auctionBiddingUpdate (Item item) throws RemoteException {
+		System.out.println(item.toString());
+	}
+
+	// print a message to the user stating that an auction in which he was interested is closed and showing the result
+	// this method is called via RMI by the auction thread
+	public void auctionClosed (String message) throws RemoteException {
+		System.out.println(message);
+	}
+
+	/*************************************/
+	/**		 	Helper Methods			**/
+	/*************************************/
 
 	private static void print_options () {
 		System.out.println();
@@ -31,10 +51,10 @@ public class Client
 
 	}
 
+	// log a user in with the server (calling an RMI method)
 	private boolean login (String name) throws Exception {
 
 		// send name to server
-
 		if ((me = server.login(name, this)) == null) {
 			// login failed
 			return false;
@@ -43,41 +63,108 @@ public class Client
 
 	}
 
+	// log a user out with the server (calling an RMI method)
 	private void logout () throws Exception {
 		server.logout(me);
 	}
 
-	public void newItem () throws RemoteException {
+	// create new item for auction
+	private void newItem () throws RemoteException {
 		
-		//System.out.println("New item");
+		//*
+		String input;
+
+		// get the item and auction fields
+		System.out.println("Enter the item name: ");
+		while ((input = System.console().readLine()).length() == 0) {
+			System.out.println("This field is mandatory");
+			System.out.println("Enter the item name: ");
+		}
+		String itemName = input;
+
+		System.out.println("Enter the item's start value: ");
+		while ((input = System.console().readLine()).length() == 0) {
+			System.out.println("This field is mandatory");
+			System.out.println("Enter the item's start value: ");
+		}
+		float minimumValue = Float.parseFloat(input);
+
+		System.out.println("Enter the duration of the auction in minutes: ");
+		while ((input = System.console().readLine()).length() == 0) {
+			System.out.println("This field is mandatory");
+			System.out.println("Enter the duration of the auction in minutes: ");
+		}
+		int time = Integer.parseInt(input);
+		Calendar closingDatetime = GregorianCalendar.getInstance();
+		closingDatetime.add(Calendar.MINUTE, time);
+
+		System.out.println("Enter the max removal time of the auction in minutes(blank for the standard 2 min): ");
+		input = System.console().readLine();
+		Calendar removalDatetime = null;
+		if (input.length() > 0) {
+			time = Integer.parseInt(input);
+			removalDatetime = GregorianCalendar.getInstance();
+			removalDatetime.add(Calendar.MINUTE, time);
+		}
+		//*/
+		
+		// mocks
+		/*
 		String itemName = "test";
 		float minimumValue = 100;
 		Calendar closingDatetime = GregorianCalendar.getInstance();
-		closingDatetime.add(Calendar.MINUTE, 2);
+		closingDatetime.add(Calendar.MINUTE, 1);
 		Calendar removalDatetime = GregorianCalendar.getInstance();
-		removalDatetime.add(Calendar.MINUTE, 5);
+		removalDatetime.add(Calendar.MINUTE, 2);
+		//*/
+		
+		// call the server RMI method to create a new auction
 		server.createAuctionItem (me, itemName, minimumValue, closingDatetime, removalDatetime);
 	}
 
 	private void bid () throws RemoteException {
-		//System.out.println("Bid");
+
+		String input;
+
+		System.out.println("Enter the auction number you want to bid: ");
+		while ((input = System.console().readLine()).length() == 0) {
+			System.out.println("This field is mandatory");
+			System.out.println("Enter the auction number you want to bid: ");
+		}
+		int auctionId = Integer.parseInt(input);
+
+		System.out.println("Enter your bid: ");
+		while ((input = System.console().readLine()).length() == 0) {
+			System.out.println("This field is mandatory");
+			System.out.println("Enter your bid: ");
+		}
+		float value = Float.parseFloat(input);
+
+		// mocks
+		/*
 		int auctionId = 0;
 		float value = 120;
 		System.out.print("bid: ");
 		String bid = System.console().readLine();
 		value = Float.parseFloat(bid);
 		System.out.println();
+		*/
+
 		RmiAuctionThreadIntf auctionThread = server.getAuctionThread(auctionId);
+		if (auctionThread == null) {
+			System.out.print("This auction doesn't exist (did you type the auction number correctly?)");
+			return;
+		}
 		
 		switch (auctionThread.bid(value, me)) {
-			case NO_ERROR:
+			case SUCCESS:
 				System.out.print("You just bid " + Float.toString(value));
-				break;
-			case AUCTION_CLOSED:
-				System.out.print("This auction is already closed");
 				break;
 			case VALUE_LOWER: 
 				System.out.print("The bid value is lower or equal to the current item value");
+				break;
+			case IS_OWNER:
+				System.out.print("You can't bid on your own item");
 				break;
 		} 
 	}
@@ -94,7 +181,7 @@ public class Client
 
 	}
 
-	public void listAvailable () throws RemoteException {
+	private void listAvailable () throws RemoteException {
 		
 		List<Auction> auctions = server.getOpenAuctions();
 		
@@ -103,14 +190,6 @@ public class Client
 				System.out.println(a.toString());
 		else
 			System.out.println("There are no open auctions at the moment");
-	}
-
-	public void auctionBiddingUpdate (Item item) throws RemoteException {
-		System.out.println(item.toString());
-	}
-
-	public void auctionClosed (String message) throws RemoteException {
-		System.out.println(message);
 	}
 
 	public static void main(String[] args) throws Exception {

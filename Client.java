@@ -3,6 +3,9 @@ import java.util.*;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RemoteException;
 import java.rmi.Naming;
+import java.rmi.ConnectException;
+import java.rmi.NotBoundException;
+import java.net.MalformedURLException;
 
 import java.io.Serializable;
 
@@ -13,33 +16,10 @@ public class Client
 	private User me;
 	private RmiServerIntf server;
 
-	public Client () throws Exception, RemoteException {
+	public Client () throws Exception {
 		super(0);
 		me = null;
-		try {
-			// try connection with the server
-			server = (RmiServerIntf)Naming.lookup("//" + TypesNConst.serverIp + "/CentralServer");
-		} catch (RemoteException e) {
-			// if it is inaccessible sleep for a while...
-			System.out.println("The server is inaccessible now. Trying again in 5 seconds");
-			Thread.sleep(TypesNConst.RECONECTION_WAITING_TIME);
-		} finally {
-			long waitingTime = TypesNConst.RECONECTION_WAITING_TIME;
-			while (true) {
-				try {
-					// ...and keep trying again until succeed
-					server = (RmiServerIntf)Naming.lookup("//" + TypesNConst.serverIp + "/CentralServer");
-					System.out.println("Connected to server");
-					break;
-				} catch (RemoteException e) {
-					// double the waiting time is optional
-					waitingTime *= 2;
-					System.out.println("The server is still inaccessible. Trying again in " + Long.toString(waitingTime/1000) + " seconds");
-					// go to sleep every time it fails to connect to the server
-					Thread.sleep(waitingTime);
-				}
-			}
-		}
+		connectToServer();
 	}
 
 	/*************************************/
@@ -78,11 +58,54 @@ public class Client
 
 	}
 
+	// keep trying to connect to the server until it succeeds
+	private void connectToServer () throws Exception {
+
+		try {
+			// try connection with the server
+			server = (RmiServerIntf)Naming.lookup("//" + TypesNConst.serverIp + "/CentralServer");
+		} catch (ConnectException e) {
+			// if it is inaccessible sleep for a while...
+			System.out.println("The server is inaccessible now. Trying again in 5 seconds");
+			try {
+				Thread.sleep(TypesNConst.RECONECTION_WAITING_TIME);
+			} catch (InterruptedException ie) {}
+		} catch (Exception e) {
+			throw e;
+		} finally {
+			long waitingTime = TypesNConst.RECONECTION_WAITING_TIME;
+			while (true) {
+				try {
+					// ...and keep trying again until succeed
+					server = (RmiServerIntf)Naming.lookup("//" + TypesNConst.serverIp + "/CentralServer");
+					System.out.println("Connected to server");
+					break;
+				} catch (ConnectException e) {
+					// double the waiting time is optional
+					waitingTime *= 2;
+					System.out.println("The server is still inaccessible. Trying again in " + Long.toString(waitingTime/1000) + " seconds");
+					// go to sleep every time it fails to connect to the server
+					try {
+						Thread.sleep(waitingTime);
+					} catch (InterruptedException ie) {}
+				} catch (Exception e) {
+					throw e;
+				}
+			}
+		}
+
+	}
+
 	// log a user in with the server (calling an RMI method)
 	private boolean login (String name) {
 
 		try {
 			// send name to server for the first time
+			me = server.login(name, this);
+		} catch (ConnectException ce) {
+			// server is disconnected
+			// connect and try again
+			connectToServer();
 			me = server.login(name, this);
 		} catch (Exception e) {
 			// if there is an already logged in user refresh the users list...
@@ -91,6 +114,10 @@ public class Client
 				// ...and try logging in again
 				me = server.login(name, this);
 				// this can fail again (there really is an user with this name already logged in)
+			} catch (ConnectException ce) {
+				// server is disconnected
+				connectToServer();
+				me = server.login(name, this);
 			} catch (Exception ee) {}
 		} finally {
 			// return if the login was successful or not
@@ -252,41 +279,46 @@ public class Client
 			if (name == null || !isLoggedIn)
 				continue;
 
-			while (true) {
-				// show the options
-				print_options();
-				System.out.println("Enter option: ");
+			try {
+				while (true) {
+					// show the options
+					print_options();
+					System.out.println("Enter option: ");
 
-				String opt = System.console().readLine();
-				if ((option = TypesNConst.UserOptions.fromString(opt)) == null) {
-					try {
-						option = TypesNConst.UserOptions.fromInt(Integer.parseInt(opt));
-					} catch (NumberFormatException e) {option = null;}
-				}
-				
-				if (option != null) {
-					switch (option) {
-						case CREATE_AUCTION_ITEM:
-							client.newItem();
-							break;
-						case BID_ITEM:
-							client.bid();
-							break;
-						case LIST_ALL_ITEMS:
-							client.listAll();
-							break;
-						case LIST_AVAILABLE_ITEMS:
-							client.listAvailable();
-							break;
-						case QUIT:
-							// close the conection with the server and quits
-							System.out.println("Bye");
-							client.logout();
-							UnicastRemoteObject.unexportObject(client, true);
-							return;
+					String opt = System.console().readLine();
+					if ((option = TypesNConst.UserOptions.fromString(opt)) == null) {
+						try {
+							option = TypesNConst.UserOptions.fromInt(Integer.parseInt(opt));
+						} catch (NumberFormatException e) {option = null;}
 					}
-				} else
-					System.out.println("Inexistent option, try again");
+					
+					if (option != null) {
+						switch (option) {
+							case CREATE_AUCTION_ITEM:
+								client.newItem();
+								break;
+							case BID_ITEM:
+								client.bid();
+								break;
+							case LIST_ALL_ITEMS:
+								client.listAll();
+								break;
+							case LIST_AVAILABLE_ITEMS:
+								client.listAvailable();
+								break;
+							case QUIT:
+								// close the conection with the server and quits
+								System.out.println("Bye");
+								client.logout();
+								UnicastRemoteObject.unexportObject(client, true);
+								return;
+						}
+					} else
+						System.out.println("Inexistent option, try again");
+				} 
+			} catch (ConnectException ce) {
+				System.out.println("The server is inaccessible. Trying to reconnect");
+				client.connectToServer();
 			}
 
 		} while (true);

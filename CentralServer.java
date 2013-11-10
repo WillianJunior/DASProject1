@@ -11,7 +11,7 @@ public class CentralServer
 	extends UnicastRemoteObject 
     implements RmiServerIntf {
 	
-	private List<User> users;
+	private volatile List<User> users;
 	
 	/* volatile Map<Auction, RmiAuctionThreadIntf> auctions
 	 * This variable have two fields, the auction object and the thread 
@@ -29,14 +29,19 @@ public class CentralServer
 	 * Concluding: auctions is safe and don't need any lock (yet...).
 	 */
 	private volatile Map<Auction, RmiAuctionThreadIntf> auctions;
-	//private volatile List<Auction> openAuctions; // references the auction list
-	//private volatile List<Auction> closedAuctions; // references the auction list: auctions = openAuctions + closedAuctions : do it later
+
+	private LiveClientChecker liveClientChecker;
+	private Timer timer;
+
 	private int auctionIdCounter; // TODO: migrate the auction and item creation to a factory
 
 	public CentralServer () throws RemoteException {
 		super(0);
 		users = new ArrayList<User>();
 		auctions = new HashMap<Auction, RmiAuctionThreadIntf>();
+		liveClientChecker = new LiveClientChecker(users, this);
+		timer = new Timer();
+		timer.scheduleAtFixedRate(liveClientChecker, 0, TypesNConst.LIVE_CLIENT_CHECKER_PERIOD);
 		auctionIdCounter = 0;
 	}
 
@@ -138,6 +143,11 @@ public class CentralServer
 
 		return null;
 
+	}
+
+	// force the refresh funciton to check if the users are still online
+	public void refreshUsersList () throws RemoteException {
+		liveClientChecker.run();
 	}
 
 	// remove the reference to the auction thread (this is an attempt to finish the auction thread)

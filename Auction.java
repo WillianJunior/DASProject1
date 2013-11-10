@@ -1,4 +1,5 @@
 import java.util.*;
+import java.text.SimpleDateFormat;
 import java.io.Serializable;
 
 public class Auction implements Serializable {
@@ -59,11 +60,13 @@ public class Auction implements Serializable {
 	}
 
 	public String toString () {
-		return ("Auction number " + Integer.toString(id) + ". Item: " + item.getName() + ". Owner: " + owner.getName() + ".");
-	}
-
-	public String getStatus () {
-		return ("Current value: " + item.getCurrentValue() + ". Auction closes at " + closingDatetime.toString());
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd-hh.mm.ss");
+		String dateTime = formatter.format(closingDatetime.getTime());
+		return ("Auction number " + Integer.toString(id) + 
+				". Item: " + item.getName() + 
+				". Owner: " + owner.getName() + 
+				". Current value: " + Float.toString(item.getCurrentValue()) + 
+				". open until: " + dateTime);
 	}
 
 	public float getCurrentValue () {

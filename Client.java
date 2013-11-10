@@ -35,6 +35,10 @@ public class Client
 		System.out.println(message);
 	}
 
+	public boolean isAlive () throws RemoteException {
+		return true;
+	}
+
 	/*************************************/
 	/**		 	Helper Methods			**/
 	/*************************************/
@@ -52,14 +56,25 @@ public class Client
 	}
 
 	// log a user in with the server (calling an RMI method)
-	private boolean login (String name) throws Exception {
+	private boolean login (String name) {
 
-		// send name to server
-		if ((me = server.login(name, this)) == null) {
-			// login failed
+		try {
+			// send name to server for the first time
+			me = server.login(name, this);
+		} catch (Exception e) {
+			// if there is an already logged in user refresh the users list...
+			server.refreshUsersList();
+			try {
+				// ...and try logging in again
+				me = server.login(name, this);
+				// this can fail again (there really is an user with this name already logged in)
+			} catch (Exception ee) {}
+		} finally {
+			// return if the login was successful or not
+			if (me != null)
+				return true;
 			return false;
 		}
-		return true;
 
 	}
 
@@ -71,7 +86,7 @@ public class Client
 	// create new item for auction
 	private void newItem () throws RemoteException {
 		
-		//*
+		/*
 		String input;
 
 		// get the item and auction fields
@@ -109,7 +124,7 @@ public class Client
 		//*/
 		
 		// mocks
-		/*
+		//*
 		String itemName = "test";
 		float minimumValue = 100;
 		Calendar closingDatetime = GregorianCalendar.getInstance();
@@ -197,6 +212,7 @@ public class Client
 		Client client = new Client();
 		String name;
 		TypesNConst.UserOptions option;
+		boolean isLoggedIn = false;
 
 		// connect to the server
 
@@ -205,14 +221,12 @@ public class Client
 			System.out.print("Username: ");
 			name = System.console().readLine();
 
-			//try {
-				client.login(name);
-			//} catch (Exception e) {
-			//	System.out.println(e.getMessage());
-			//	name = null; // probably there is a better way to signal inside the while that an exception just occured
-			//}
+			if (!client.login(name))
+				System.out.println("Login failed. There already is someone logged in with this username.");
+			else
+				isLoggedIn = true;
 			
-		} while (name == null);
+		} while (name == null || !isLoggedIn);
 
 		while (true) {
 			// show the options

@@ -47,7 +47,9 @@ public class AuctionThread
 			highestBidder = bidder;
 			// notify the owner only if he is online
 			if (auction.getOwner().isConnected())
-				auction.getOwner().getClient().auctionBiddingUpdate(auction.getItem());
+				try {
+					auction.getOwner().getClient().auctionBiddingUpdate(auction.getItem());
+				} catch (RemoteException e) {}
 			System.out.println("[AuctionThread.bid] bid is valid for item " + auction.getItem().getName() + ". new value: " + Float.toString(auction.getCurrentValue()));
 			return TypesNConst.BiddingReturns.SUCCESS;
 		} else {
@@ -69,25 +71,29 @@ public class AuctionThread
 
 	public synchronized Auction closeAuction () throws RemoteException {
 
-		String[] auctionResult = {"Auction no" + Integer.toString(auction.getId()) + " is closed", 
+		if (highestBidder == null) {
+			String noWinners = "No one bid on your item";
+			auction.getOwner().getClient().auctionClosed(noWinners);
+		} else {
+			String[] auctionResult = {"Auction no" + Integer.toString(auction.getId()) + " is closed", 
 				"Item: " + auction.getItem().getName(),
 				"Owner: " + auction.getOwner().getName(),
 				"Original value: " + Float.toString(auction.getMinimumValue()),
 				"Item sold for " + Float.toString(auction.getCurrentValue()) + " to " + highestBidder.getName()};
-		String auctionWinner = "Congratulations, you are the auction no" + Integer.toString(auction.getId()) + " winner";
-		String noWinners = "No one bid on your item";
+			String auctionWinner = "Congratulations, you are the auction no" + Integer.toString(auction.getId()) + " winner";
 
-		if (highestBidder == null) {
-			auction.getOwner().getClient().auctionClosed(noWinners);
-		} else {
 			for (User u : bidders) {
 				for (String s : auctionResult) {
-					u.getClient().auctionClosed(s);
+					try {
+						u.getClient().auctionClosed(s);
+					} catch (RemoteException e) {}
 				}
 			}
 			highestBidder.getClient().auctionClosed(auctionWinner);
 			for (String s : auctionResult) {
-				auction.getOwner().getClient().auctionClosed(s);
+				try {
+					auction.getOwner().getClient().auctionClosed(s);
+				} catch (RemoteException e) {}
 			}
 		}
 

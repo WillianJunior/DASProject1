@@ -16,7 +16,30 @@ public class Client
 	public Client () throws Exception, RemoteException {
 		super(0);
 		me = null;
-		server = (RmiServerIntf)Naming.lookup("//" + TypesNConst.serverIp + "/CentralServer");
+		try {
+			// try connection with the server
+			server = (RmiServerIntf)Naming.lookup("//" + TypesNConst.serverIp + "/CentralServer");
+		} catch (RemoteException e) {
+			// if it is inaccessible sleep for a while...
+			System.out.println("The server is inaccessible now. Trying again in 5 seconds");
+			Thread.sleep(TypesNConst.RECONECTION_WAITING_TIME);
+		} finally {
+			long waitingTime = TypesNConst.RECONECTION_WAITING_TIME;
+			while (true) {
+				try {
+					// ...and keep trying again until succeed
+					server = (RmiServerIntf)Naming.lookup("//" + TypesNConst.serverIp + "/CentralServer");
+					System.out.println("Connected to server");
+					break;
+				} catch (RemoteException e) {
+					// double the waiting time is optional
+					waitingTime *= 2;
+					System.out.println("The server is still inaccessible. Trying again in " + Long.toString(waitingTime/1000) + " seconds");
+					// go to sleep every time it fails to connect to the server
+					Thread.sleep(waitingTime);
+				}
+			}
+		}
 	}
 
 	/*************************************/
@@ -226,44 +249,47 @@ public class Client
 			else
 				isLoggedIn = true;
 			
-		} while (name == null || !isLoggedIn);
+			if (name == null || !isLoggedIn)
+				continue;
 
-		while (true) {
-			// show the options
-			print_options();
-			System.out.println("Enter option: ");
+			while (true) {
+				// show the options
+				print_options();
+				System.out.println("Enter option: ");
 
-			String opt = System.console().readLine();
-			if ((option = TypesNConst.UserOptions.fromString(opt)) == null) {
-				try {
-					option = TypesNConst.UserOptions.fromInt(Integer.parseInt(opt));
-				} catch (NumberFormatException e) {option = null;}
-			}
-			
-			if (option != null) {
-				switch (option) {
-					case CREATE_AUCTION_ITEM:
-						client.newItem();
-						break;
-					case BID_ITEM:
-						client.bid();
-						break;
-					case LIST_ALL_ITEMS:
-						client.listAll();
-						break;
-					case LIST_AVAILABLE_ITEMS:
-						client.listAvailable();
-						break;
-					case QUIT:
-						// close the conection with the server and quits
-						System.out.println("Bye");
-						client.logout();
-						UnicastRemoteObject.unexportObject(client, true);
-						return;
+				String opt = System.console().readLine();
+				if ((option = TypesNConst.UserOptions.fromString(opt)) == null) {
+					try {
+						option = TypesNConst.UserOptions.fromInt(Integer.parseInt(opt));
+					} catch (NumberFormatException e) {option = null;}
 				}
-			} else
-				System.out.println("Inexistent option, try again");
-		}
+				
+				if (option != null) {
+					switch (option) {
+						case CREATE_AUCTION_ITEM:
+							client.newItem();
+							break;
+						case BID_ITEM:
+							client.bid();
+							break;
+						case LIST_ALL_ITEMS:
+							client.listAll();
+							break;
+						case LIST_AVAILABLE_ITEMS:
+							client.listAvailable();
+							break;
+						case QUIT:
+							// close the conection with the server and quits
+							System.out.println("Bye");
+							client.logout();
+							UnicastRemoteObject.unexportObject(client, true);
+							return;
+					}
+				} else
+					System.out.println("Inexistent option, try again");
+			}
+
+		} while (true);
 
 	}
 

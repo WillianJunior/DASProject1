@@ -5,6 +5,7 @@ public class TypesNConst {
 	// Numeric Constants
 	public static final int MAX_ITEM_REMOVAL_TIME = 10; // in minutes
 	public static final long LIVE_CLIENT_CHECKER_PERIOD = 60000; // in milliseconds
+	public static final long RECONECTION_WAITING_TIME = 5000; // in milliseconds
 
 	// String Constants
 	public static final String serverIp = "localhost";

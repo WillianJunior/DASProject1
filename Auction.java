@@ -60,7 +60,7 @@ public class Auction implements Serializable {
 	}
 
 	public String toString () {
-		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd-hh.mm.ss");
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
 		String dateTime = formatter.format(closingDatetime.getTime());
 		return ("Auction number " + Integer.toString(id) + 
 				". Item: " + item.getName() + 

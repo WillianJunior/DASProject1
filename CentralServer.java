@@ -1,6 +1,8 @@
 import java.util.*;
 import java.lang.Thread.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReentrantLock;
 
 import java.rmi.Naming;
 import java.rmi.RemoteException;
@@ -32,6 +34,9 @@ public class CentralServer
 
 	private LiveClientChecker liveClientChecker;
 	private Timer timer;
+	private Semaphore reader;
+	private Semaphore writer;
+	private ReentrantLock multex;
 
 	private int auctionIdCounter; // TODO: migrate the auction and item creation to a factory
 
@@ -43,6 +48,9 @@ public class CentralServer
 		timer = new Timer();
 		timer.scheduleAtFixedRate(liveClientChecker, 0, TypesNConst.LIVE_CLIENT_CHECKER_PERIOD);
 		auctionIdCounter = 0;
+		reader = new Semaphore(Integer.MAX_VALUE);
+		writer = new Semaphore(Integer.MAX_VALUE);
+		multex = new ReentrantLock();
 	}
 
 	/*************************************/
@@ -108,20 +116,21 @@ public class CentralServer
 		new Thread(auctionThread).start();
 
 		// insert the auction into the list
-		synchronized (auctions) {
-			auctions.put(auction, (RmiAuctionThreadIntf)auctionThread);
-		}
+		multex.lock();
+		reader.acquireUninterruptibly(Integer.MAX_VALUE);
+		reader.release(Integer.MAX_VALUE);
+		writer.acquireUninterruptibly();
+		multex.unlock();
+		auctions.put(auction, (RmiAuctionThreadIntf)auctionThread);
+		writer.release();
 
 	}
 
 	// return all auctions
 	public List<Auction> getAllAuctions () throws RemoteException {
 		
-		Set<Auction> temp;
-		synchronized (auctions) {
-			temp = auctions.keySet();
-		}
-		return new ArrayList<Auction>(temp);
+		Map<Auction, RmiAuctionThreadIntf> temp = new HashMap<Auction, RmiAuctionThreadIntf>(auctions);
+		return new ArrayList<Auction>(temp.keySet());
 
 	}
 
@@ -130,11 +139,17 @@ public class CentralServer
 		
 		List<Auction> openAuctions = new ArrayList<Auction>();
 
-		synchronized (auctions) {
-			for (Auction auction : auctions.keySet())
-				if (!auction.isClosed())
-					openAuctions.add(auction);
-		}
+		multex.lock();
+		writer.acquireUninterruptibly(Integer.MAX_VALUE);
+		writer.release(Integer.MAX_VALUE);
+		reader.acquireUninterruptibly();
+		multex.unlock();
+
+		for (Auction auction : auctions.keySet())
+			if (!auction.isClosed())
+				openAuctions.add(auction);
+
+		reader.release();
 
 		return openAuctions;
 	}	

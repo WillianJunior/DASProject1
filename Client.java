@@ -194,12 +194,9 @@ public class Client
 
 	protected void bid (int auctionId, float value) throws RemoteException {
 		RmiAuctionThreadIntf auctionThread = server.getAuctionThread(auctionId);
-		if (auctionThread == null) {
-			System.out.print("N");
+		if (auctionThread == null)
 			return;
-		}
 		
-		System.out.print("Y");
 		auctionThread.bid(value, me);
 	}
 	

@@ -8,7 +8,7 @@ public class TypesNConst {
 	public static final long RECONECTION_WAITING_TIME = 5000; // in milliseconds
 
 	// String Constants
-	public static final String serverIp = "localhost";
+	public static final String serverIp = "localhost";//"172.30.49.227";
 
 	// Enums
 	public static enum UserType {

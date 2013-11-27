@@ -7,11 +7,11 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.registry.*; 
 
-public class CentralServer 
+public class DistributedServer 
 	extends UnicastRemoteObject 
     implements RmiServerIntf {
 	
-	private volatile List<User> users;
+	private List<User> users;
 	
 	/* volatile Map<Auction, RmiAuctionThreadIntf> auctions
 	 * This variable have two fields, the auction object and the thread 
@@ -29,19 +29,14 @@ public class CentralServer
 	 * Concluding: auctions is safe and don't need any lock (yet...).
 	 */
 	private volatile Map<Auction, RmiAuctionThreadIntf> auctions;
-
-	private LiveClientChecker liveClientChecker;
-	private Timer timer;
-
+	//private volatile List<Auction> openAuctions; // references the auction list
+	//private volatile List<Auction> closedAuctions; // references the auction list: auctions = openAuctions + closedAuctions : do it later
 	private int auctionIdCounter; // TODO: migrate the auction and item creation to a factory
 
-	public CentralServer () throws RemoteException {
+	public DistributedServer () throws RemoteException {
 		super(0);
 		users = new ArrayList<User>();
 		auctions = new HashMap<Auction, RmiAuctionThreadIntf>();
-		liveClientChecker = new LiveClientChecker(users, this);
-		timer = new Timer();
-		timer.scheduleAtFixedRate(liveClientChecker, 0, TypesNConst.LIVE_CLIENT_CHECKER_PERIOD);
 		auctionIdCounter = 0;
 	}
 
@@ -57,12 +52,12 @@ public class CentralServer
 
 		if (user == null) {
 			// if the user is a new one, create it
-			System.out.println("[CentralServer.login] new user: " + username);
+			System.out.println("[DistributedServer.login] new user: " + username);
 			user = new User(username, client);
 			users.add(user);
 		} else {
 			// if the user is just loggin in
-			System.out.println("[CentralServer.login] user exists");
+			System.out.println("[DistributedServer.login] user exists");
 			user.connect(client);
 			// broadcast to all auctions threads that the user is connected, so callback is needed and shoud be ennabled again
 			for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : auctions.entrySet())
@@ -80,7 +75,7 @@ public class CentralServer
 		
 		// find the user and update its state to disconnected
 		User u = findUser(user);
-		System.out.println("[CentralServer.logout] " + u.getName());
+		System.out.println("[DistributedServer.logout] " + u.getName());
 		u.disconnect();
 
 		// broadcast to all auctions threads that the user is disconected, so no callback shoud be disabled
@@ -102,27 +97,28 @@ public class CentralServer
 		Auction auction = new Auction(getUniqueAuctionId(), item, user, closingDatetime, removalDatetime);
 
 		// start auction thread
-		Runnable auctionThread = new AuctionThread(auction, this);
-		
-		// this can throw an OutOfMemoryError exception
-		new Thread(auctionThread).start();
+		//Runnable auctionThread = new AuctionThread(auction, this);
+		//new Thread(auctionThread).start();
 
 		// insert the auction into the list
-		synchronized (auctions) {
-			auctions.put(auction, (RmiAuctionThreadIntf)auctionThread);
-		}
+		//auctions.put(auction, (RmiAuctionThreadIntf)auctionThread);
 
+	}
+
+// force the refresh funciton to check if the users are still online
+	public void refreshUsersList () throws RemoteException {
+		
 	}
 
 	// return all auctions
 	public List<Auction> getAllAuctions () throws RemoteException {
 		
-		Set<Auction> temp;
-		synchronized (auctions) {
-			temp = auctions.keySet();
-		}
-		return new ArrayList<Auction>(temp);
+		List<Auction> auctions = new ArrayList<Auction>();
+		
+		for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : this.auctions.entrySet())
+			auctions.add(entry.getKey());
 
+		return auctions;
 	}
 
 	// return the open auctions that haven't been removed
@@ -130,11 +126,9 @@ public class CentralServer
 		
 		List<Auction> openAuctions = new ArrayList<Auction>();
 
-		synchronized (auctions) {
-			for (Auction auction : auctions.keySet())
-				if (!auction.isClosed())
-					openAuctions.add(auction);
-		}
+		for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : this.auctions.entrySet())
+			if (!entry.getKey().isClosed())
+				openAuctions.add(entry.getKey());
 
 		return openAuctions;
 	}	
@@ -143,17 +137,12 @@ public class CentralServer
 	// this method can (and will) be called concurrently
 	public RmiAuctionThreadIntf getAuctionThread (int auctionId) throws RemoteException {
 		
-		for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : auctions.entrySet())
+		for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : this.auctions.entrySet())
 			if (entry.getKey().getId() == auctionId && !entry.getKey().isClosed())
 				return entry.getValue();
 
 		return null;
 
-	}
-
-	// force the refresh funciton to check if the users are still online
-	public void refreshUsersList () throws RemoteException {
-		liveClientChecker.run();
 	}
 
 	// remove the reference to the auction thread (this is an attempt to finish the auction thread)
@@ -176,7 +165,7 @@ public class CentralServer
 	private User findUser (String username) {
 		for (User u : users)
 			if (u.getName().equals(username)) {
-				System.out.println("[CentralServer.findUser] found: " + u.getName());
+				System.out.println("[DistributedServer.findUser] found: " + u.getName());
 				return u;
 			}
 		
@@ -191,7 +180,7 @@ public class CentralServer
 	private User findUser (User user) {
 		for (User u : users) 
 			if (u.equals(user)) {
-				System.out.println("[CentralServer.findUser] found: " + u.getName());
+				System.out.println("[DistributedServer.findUser] found: " + u.getName());
 				return u;
 			}
 		
@@ -242,10 +231,10 @@ public class CentralServer
         }
  
         //Instantiate RmiServer
-        CentralServer obj = new CentralServer();
+        DistributedServer obj = new DistributedServer();
  
         // Bind this object instance to the name "RmiServer"
-        Naming.rebind("//" + TypesNConst.serverIp + "/CentralServer", obj);
+        Naming.rebind("//" + TypesNConst.serverIp + "/DistributedServer", obj);
         System.out.println("PeerServer bound in registry");
 
 	}

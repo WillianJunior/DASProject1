@@ -59,7 +59,7 @@ public class Client
 	}
 
 	// keep trying to connect to the server until it succeeds
-	private void connectToServer () throws Exception {
+	protected void connectToServer () throws Exception {
 
 		try {
 			// try connection with the server
@@ -97,7 +97,7 @@ public class Client
 	}
 
 	// log a user in with the server (calling an RMI method)
-	private boolean login (String name) {
+	protected boolean login (String name) {
 
 		try {
 			// send name to server for the first time
@@ -129,8 +129,13 @@ public class Client
 	}
 
 	// log a user out with the server (calling an RMI method)
-	private void logout () throws Exception {
+	protected void logout () throws Exception {
 		server.logout(me);
+	}
+
+	// for testing purposes only
+	protected void newItem (String name, float minimumValue, Calendar closingDatetime, Calendar removalDatetime) throws RemoteException {
+		server.createAuctionItem (me, name, minimumValue, closingDatetime, removalDatetime);
 	}
 
 	// create new item for auction
@@ -187,6 +192,17 @@ public class Client
 		server.createAuctionItem (me, itemName, minimumValue, closingDatetime, removalDatetime);
 	}
 
+	protected void bid (int auctionId, float value) throws RemoteException {
+		RmiAuctionThreadIntf auctionThread = server.getAuctionThread(auctionId);
+		if (auctionThread == null) {
+			System.out.print("N");
+			return;
+		}
+		
+		System.out.print("Y");
+		auctionThread.bid(value, me);
+	}
+	
 	private void bid () throws RemoteException {
 
 		String input;
@@ -234,6 +250,16 @@ public class Client
 		} 
 	}
 
+	protected void listAllNoPrint () throws RemoteException {
+		
+		List<Auction> auctions = server.getAllAuctions();	
+		
+		if (auctions.size() > 0)
+			for (Auction a : auctions)
+				a.toString();
+
+	}
+
 	private void listAll () throws RemoteException {
 		
 		List<Auction> auctions = server.getAllAuctions();	
@@ -244,6 +270,15 @@ public class Client
 		else
 			System.out.println("There are no auctions at the moment");
 
+	}
+
+	protected void listAvailableNoPrint () throws RemoteException {
+		
+		List<Auction> auctions = server.getOpenAuctions();
+		
+		if (auctions.size() > 0)
+			for (Auction a : auctions)
+				a.toString();
 	}
 
 	private void listAvailable () throws RemoteException {

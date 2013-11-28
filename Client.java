@@ -141,6 +141,10 @@ public class Client
 	// for testing purposes only
 	protected void newItem (String name, float minimumValue, Calendar closingDatetime, Calendar removalDatetime) throws RemoteException {
 		try {
+			if (me.isConnected())
+				try {
+					me.disconnect();
+				} catch (Exception e) {}
 			server.createAuctionItem (me, name, minimumValue, closingDatetime, removalDatetime);
 		} catch (UnmarshalException ue) {}
 	}

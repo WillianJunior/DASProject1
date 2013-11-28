@@ -66,7 +66,7 @@ public class Auction implements Serializable {
 		String dateTime = formatter.format(dt.getTime());
 		return ("Auction number " + Integer.toString(id) + 
 				". Item: " + item.getName() + 
-				". Owner: " + owner.getName() + 
+				". Owner: " + owner!=null ? owner.getName() : "" + 
 				". Current value: " + Float.toString(item.getCurrentValue()) + 
 				". open until: " + dateTime);
 	}

@@ -45,7 +45,7 @@ public class ElatedClient extends Client {
 		boolean isLoggedIn = false;
 
 		// connect to the server
-		System.out.println("let the stress begin!!!");
+		//System.out.println("let the stress begin!!!");
 		int argOption = Integer.parseInt(args[0]);
 		int delay = Integer.parseInt(args[1]);
 		String name = args[2];
@@ -78,7 +78,7 @@ public class ElatedClient extends Client {
 							long startTime = System.currentTimeMillis();
 							client.newItem(itemName, minimumValue, closingDatetime, removalDatetime);
 							long stopTime = System.currentTimeMillis();
-							System.out.println((stopTime - startTime));
+							System.out.print((stopTime - startTime) + ", ");
 							break;
 						case BID_ITEM:
 							int auctionId = (int) (Math.random() * 2000);
@@ -86,19 +86,19 @@ public class ElatedClient extends Client {
 							startTime = System.currentTimeMillis();
 							client.bid(auctionId, value);
 							stopTime = System.currentTimeMillis();
-							System.out.println((stopTime - startTime));
+							System.out.print((stopTime - startTime) + ", ");
 							break;
 						case LIST_ALL_ITEMS:
 							startTime = System.currentTimeMillis();
 							client.listAllNoPrint();
 							stopTime = System.currentTimeMillis();
-							System.out.println((stopTime - startTime));
+							System.out.print((stopTime - startTime) + ", ");
 							break;
 						case LIST_AVAILABLE_ITEMS:
 							startTime = System.currentTimeMillis();
 							client.listAvailableNoPrint();
 							stopTime = System.currentTimeMillis();
-							System.out.println((stopTime - startTime));
+							System.out.print((stopTime - startTime) + ", ");
 							break;
 						case QUIT:
 							// close the conection with the server and quits
@@ -109,8 +109,8 @@ public class ElatedClient extends Client {
 					}
 				} 
 			} catch (ConnectException ce) {
-				System.out.println("The server is inaccessible. Trying to reconnect");
-				client.connectToServer();
+				UnicastRemoteObject.unexportObject(client, true);
+				return;
 			}
 
 		} while (true);

@@ -17,15 +17,20 @@ public class AuctionTimeoutThread implements Runnable {
 
 	public void run () {
 		try {
+			long sleepTime;
 			System.out.println("[AuctionTimeoutThread] millis to first sleep: " + Long.toString(closingTime - GregorianCalendar.getInstance().getTimeInMillis()));
 			try {
-				Thread.sleep((closingTime - GregorianCalendar.getInstance().getTimeInMillis()));
+				sleepTime = closingTime - GregorianCalendar.getInstance().getTimeInMillis();
+				if (sleepTime > 0)
+					Thread.sleep(sleepTime);
 			} catch (InterruptedException e) {}
 			Auction auction = auctionThread.closeAuction();
 			server.closeAuction(auction);
 			System.out.println("[AuctionTimeoutThread] millis to second sleep: " + Long.toString(removalTime - GregorianCalendar.getInstance().getTimeInMillis()));
 			try {
-				Thread.sleep((removalTime - GregorianCalendar.getInstance().getTimeInMillis()));
+				sleepTime = removalTime - GregorianCalendar.getInstance().getTimeInMillis();
+				if (sleepTime > 0)
+					Thread.sleep(sleepTime);
 			} catch (InterruptedException e) {}
 			System.out.println("[AuctionTimeoutThread] i'm out");
 			server.removeAuction(auction);

@@ -72,9 +72,9 @@ public class ElatedClient extends Client {
 							String itemName = "test";
 							float minimumValue = 100;
 							Calendar closingDatetime = GregorianCalendar.getInstance();
-							closingDatetime.add(Calendar.MINUTE, 10);
+							closingDatetime.add(Calendar.MINUTE, 1);
 							Calendar removalDatetime = GregorianCalendar.getInstance();
-							removalDatetime.add(Calendar.MINUTE, 20);
+							removalDatetime.add(Calendar.MINUTE, 10);
 							long startTime = System.currentTimeMillis();
 							client.newItem(itemName, minimumValue, closingDatetime, removalDatetime);
 							long stopTime = System.currentTimeMillis();

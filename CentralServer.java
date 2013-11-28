@@ -151,9 +151,7 @@ public class CentralServer
 	}	
 
 	// return the thread responsable for the auction represented by the auctionId. 
-	// this method can (and will) be called concurrently (NOT)
-	// update: actualy, java don't let me access it concurrently.
-	// what java thinks: i'm updating the hole list 
+	// this method can (and will) be called concurrently (almost.. only with read operations)
 	public RmiAuctionThreadIntf getAuctionThread (int auctionId) throws RemoteException {
 		
 		myLock(reader, writer);

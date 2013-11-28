@@ -5,6 +5,7 @@ import java.rmi.RemoteException;
 import java.rmi.Naming;
 import java.rmi.ConnectException;
 import java.rmi.NotBoundException;
+import java.rmi.UnmarshalException;
 import java.net.MalformedURLException;
 
 import java.io.Serializable;
@@ -109,7 +110,7 @@ public class Client
 			me = server.login(name, this);
 		} catch (Exception e) {
 			// if there is an already logged in user refresh the users list...
-			server.refreshUsersList();
+			server.refreshUsersList(); // TODO: can this throw an exception?
 			try {
 				// ...and try logging in again
 				me = server.login(name, this);
@@ -130,18 +131,24 @@ public class Client
 
 	// log a user out with the server (calling an RMI method)
 	protected void logout () throws Exception {
-		server.logout(me);
+		try {
+			server.logout(me);
+		} catch (UnmarshalException ue) {
+			System.out.println("There was an error while processing your request");
+		}
 	}
 
 	// for testing purposes only
 	protected void newItem (String name, float minimumValue, Calendar closingDatetime, Calendar removalDatetime) throws RemoteException {
-		server.createAuctionItem (me, name, minimumValue, closingDatetime, removalDatetime);
+		try {
+			server.createAuctionItem (me, name, minimumValue, closingDatetime, removalDatetime);
+		} catch (UnmarshalException ue) {}
 	}
 
 	// create new item for auction
 	private void newItem () throws RemoteException {
 		
-		/*
+		//*
 		String input;
 
 		// get the item and auction fields
@@ -179,7 +186,7 @@ public class Client
 		//*/
 		
 		// mocks
-		//*
+		/*
 		String itemName = "test";
 		float minimumValue = 100;
 		Calendar closingDatetime = GregorianCalendar.getInstance();
@@ -189,15 +196,21 @@ public class Client
 		//*/
 		
 		// call the server RMI method to create a new auction
-		server.createAuctionItem (me, itemName, minimumValue, closingDatetime, removalDatetime);
+		try {
+			server.createAuctionItem (me, itemName, minimumValue, closingDatetime, removalDatetime);
+		} catch (UnmarshalException ue) {
+			System.out.println("There was an error while processing your request");
+		}
 	}
 
 	protected void bid (int auctionId, float value) throws RemoteException {
-		RmiAuctionThreadIntf auctionThread = server.getAuctionThread(auctionId);
-		if (auctionThread == null)
-			return;
 		
-		auctionThread.bid(value, me);
+		try {
+			RmiAuctionThreadIntf auctionThread = server.getAuctionThread(auctionId);
+			if (auctionThread == null)
+				return;
+			auctionThread.bid(value, me);
+		} catch (UnmarshalException ue) {}
 	}
 	
 	private void bid () throws RemoteException {
@@ -228,28 +241,37 @@ public class Client
 		System.out.println();
 		*/
 
-		RmiAuctionThreadIntf auctionThread = server.getAuctionThread(auctionId);
-		if (auctionThread == null) {
-			System.out.print("This auction doesn't exist (did you type the auction number correctly?)");
-			return;
+		try {
+			RmiAuctionThreadIntf auctionThread = server.getAuctionThread(auctionId);
+			if (auctionThread == null) {
+				System.out.print("This auction doesn't exist (did you type the auction number correctly?)");
+				return;
+			}
+			
+			switch (auctionThread.bid(value, me)) {
+				case SUCCESS:
+					System.out.print("You just bid " + Float.toString(value));
+					break;
+				case VALUE_LOWER: 
+					System.out.print("The bid value is lower or equal to the current item value");
+					break;
+				case IS_OWNER:
+					System.out.print("You can't bid on your own item");
+					break;
+			} 
+		} catch (UnmarshalException ue) {
+			System.out.println("There was an error while processing your request");
 		}
-		
-		switch (auctionThread.bid(value, me)) {
-			case SUCCESS:
-				System.out.print("You just bid " + Float.toString(value));
-				break;
-			case VALUE_LOWER: 
-				System.out.print("The bid value is lower or equal to the current item value");
-				break;
-			case IS_OWNER:
-				System.out.print("You can't bid on your own item");
-				break;
-		} 
 	}
 
 	protected void listAllNoPrint () throws RemoteException {
 		
-		List<Auction> auctions = server.getAllAuctions();
+		List<Auction> auctions;
+		try {
+			auctions = server.getAllAuctions();
+		} catch (UnmarshalException ue) {
+			return;
+		}
 		
 		if (auctions.size() > 0)
 			for (Auction a : auctions)
@@ -259,7 +281,13 @@ public class Client
 
 	private void listAll () throws RemoteException {
 		
-		List<Auction> auctions = server.getAllAuctions();	
+		List<Auction> auctions;
+		try {
+			auctions = server.getAllAuctions();
+		} catch (UnmarshalException ue) {
+			System.out.println("There was an error while processing your request");
+			return;
+		}
 		
 		if (auctions.size() > 0)
 			for (Auction a : auctions)
@@ -271,7 +299,12 @@ public class Client
 
 	protected void listAvailableNoPrint () throws RemoteException {
 		
-		List<Auction> auctions = server.getOpenAuctions();
+		List<Auction> auctions;
+		try {
+			auctions = server.getOpenAuctions();
+		} catch (UnmarshalException ue) {
+			return;
+		}
 		
 		if (auctions.size() > 0)
 			for (Auction a : auctions)
@@ -280,7 +313,13 @@ public class Client
 
 	private void listAvailable () throws RemoteException {
 		
-		List<Auction> auctions = server.getOpenAuctions();
+		List<Auction> auctions;
+		try {
+			auctions = server.getOpenAuctions();
+		} catch (UnmarshalException ue) {
+			System.out.println("There was an error while processing your request");
+			return;
+		}
 		
 		if (auctions.size() > 0)
 			for (Auction a : auctions)

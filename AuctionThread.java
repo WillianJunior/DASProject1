@@ -73,6 +73,8 @@ public class AuctionThread
 
 		if (highestBidder == null) {
 			String noWinners = "No one bid on your item";
+			auction.getOwner();
+			auction.getOwner().getClient();
 			auction.getOwner().getClient().auctionClosed(noWinners);
 		} else {
 			String[] auctionResult = {"Auction no" + Integer.toString(auction.getId()) + " is closed", 

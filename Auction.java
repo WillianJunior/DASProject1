@@ -8,20 +8,20 @@ public class Auction implements Serializable {
 	private Item item;
 	private User owner;
 	private boolean closed;
-	private Calendar closingDatetime;
-	private Calendar removalDatetime;
+	private long closingDatetime;
+	private long removalDatetime;
 
 	public Auction (int id, Item item, User owner, Calendar closingDatetime, Calendar removalDatetime) {
 		this.id = id;
 		this.item = item;
 		this.owner = owner;
 		closed = false;
-		this.closingDatetime = closingDatetime;
-		if (removalDatetime == null || ((removalDatetime.getTimeInMillis() - GregorianCalendar.getInstance().getTimeInMillis()) / 6000) > TypesNConst.MAX_ITEM_REMOVAL_TIME) {
-			this.removalDatetime = GregorianCalendar.getInstance();
-			this.removalDatetime.add(Calendar.MINUTE, TypesNConst.MAX_ITEM_REMOVAL_TIME);
+		this.closingDatetime = closingDatetime.getTimeInMillis();
+		if (removalDatetime == null || ((removalDatetime.getTimeInMillis() - GregorianCalendar.getInstance().getTimeInMillis()) / 60000) > TypesNConst.MAX_ITEM_REMOVAL_TIME) {
+			this.removalDatetime = GregorianCalendar.getInstance().getTimeInMillis();
+			this.removalDatetime +=  TypesNConst.MAX_ITEM_REMOVAL_TIME*60000;
 		} else
-			this.removalDatetime = removalDatetime;
+			this.removalDatetime = removalDatetime.getTimeInMillis();
 		System.out.println("[Auction.Auction] auction created: " + toString());
 	}
 
@@ -39,15 +39,15 @@ public class Auction implements Serializable {
 		return closed;
 	}
 
-	public boolean isClosed (Calendar now) {
-		return closingDatetime.after(now);
+	public boolean isClosed (long now) {
+		return closingDatetime < now;
 	}
 
-	public Calendar getClosingDate () {
+	public long getClosingDate () {
 		return closingDatetime;
 	}
 
-	public Calendar getRemovalDate () {
+	public long getRemovalDate () {
 		return removalDatetime;
 	}
 
@@ -61,7 +61,9 @@ public class Auction implements Serializable {
 
 	public String toString () {
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-		String dateTime = formatter.format(closingDatetime.getTime());
+		Calendar dt = GregorianCalendar.getInstance();
+		dt.setTimeInMillis(closingDatetime);
+		String dateTime = formatter.format(dt.getTime());
 		return ("Auction number " + Integer.toString(id) + 
 				". Item: " + item.getName() + 
 				". Owner: " + owner.getName() + 

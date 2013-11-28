@@ -249,7 +249,7 @@ public class Client
 
 	protected void listAllNoPrint () throws RemoteException {
 		
-		List<Auction> auctions = server.getAllAuctions();	
+		List<Auction> auctions = server.getAllAuctions();
 		
 		if (auctions.size() > 0)
 			for (Auction a : auctions)

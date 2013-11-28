@@ -116,21 +116,21 @@ public class CentralServer
 		new Thread(auctionThread).start();
 
 		// insert the auction into the list
-		multex.lock();
-		reader.acquireUninterruptibly(Integer.MAX_VALUE);
-		reader.release(Integer.MAX_VALUE);
-		writer.acquireUninterruptibly();
-		multex.unlock();
+		myLock(writer, reader);
 		auctions.put(auction, (RmiAuctionThreadIntf)auctionThread);
-		writer.release();
+		myUnlock(writer);
 
 	}
 
 	// return all auctions
 	public List<Auction> getAllAuctions () throws RemoteException {
 		
-		Map<Auction, RmiAuctionThreadIntf> temp = new HashMap<Auction, RmiAuctionThreadIntf>(auctions);
-		return new ArrayList<Auction>(temp.keySet());
+		List<Auction> auctions = new ArrayList<Auction>();
+		myLock(reader, writer);
+		for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : this.auctions.entrySet())
+			auctions.add(entry.getKey());
+		myUnlock(reader);
+		return auctions;
 
 	}
 
@@ -139,28 +139,30 @@ public class CentralServer
 		
 		List<Auction> openAuctions = new ArrayList<Auction>();
 
-		multex.lock();
-		writer.acquireUninterruptibly(Integer.MAX_VALUE);
-		writer.release(Integer.MAX_VALUE);
-		reader.acquireUninterruptibly();
-		multex.unlock();
+		myLock(reader, writer);
 
 		for (Auction auction : auctions.keySet())
 			if (!auction.isClosed())
 				openAuctions.add(auction);
 
-		reader.release();
+		myUnlock(reader);
 
 		return openAuctions;
 	}	
 
 	// return the thread responsable for the auction represented by the auctionId. 
-	// this method can (and will) be called concurrently
+	// this method can (and will) be called concurrently (NOT)
+	// update: actualy, java don't let me access it concurrently.
+	// what java thinks: i'm updating the hole list 
 	public RmiAuctionThreadIntf getAuctionThread (int auctionId) throws RemoteException {
 		
+		myLock(reader, writer);
 		for (Map.Entry<Auction, RmiAuctionThreadIntf> entry : auctions.entrySet())
-			if (entry.getKey().getId() == auctionId && !entry.getKey().isClosed())
+			if (entry.getKey().getId() == auctionId && !entry.getKey().isClosed()) {
+				myUnlock(reader);
 				return entry.getValue();
+			}
+		myUnlock(reader);
 
 		return null;
 
@@ -182,6 +184,25 @@ public class CentralServer
 			auctions.remove(auction);
 		}
 	}
+
+	/*************************************************/
+	/**		 	Concurrency Control Methods			**/
+	/*************************************************/
+
+	private void myLock (Semaphore mySem, Semaphore itsSem) {
+		multex.lock();
+		itsSem.acquireUninterruptibly(Integer.MAX_VALUE);
+		itsSem.release(Integer.MAX_VALUE);
+		mySem.acquireUninterruptibly();
+		multex.unlock();
+	}
+
+	private void myUnlock (Semaphore sem) {
+		sem.release();
+	}
+
+
+
 
 	/*************************************/
 	/**		 	Helper Methods			**/

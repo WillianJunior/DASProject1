@@ -53,4 +53,6 @@ means(2,:)=[sum(test21)/length(test21), sum(test22)/length(test22), sum(test23)/
 means(3,:)=[sum(test31)/length(test31), sum(test32)/length(test32), sum(test33)/length(test33), sum(test34)/length(test34), sum(test35)/length(test35), sum(test36)/length(test36)];
 means(4,:)=[sum(test41)/length(test41), sum(test42)/length(test42), sum(test43)/length(test43), sum(test44)/length(test44), sum(test45)/length(test45), sum(test46)/length(test46)];
 
+allMeans = [mean(means(1:4,:))]
+
 means

@@ -1,0 +1,80 @@
+Student name: Willian de Oliveira Barreiros Junior
+Matric Number: 2105514
+
+###############
+# Compilation #
+###############
+To compile a simple:
+$ javac *.java
+will suffice
+
+#############
+# Execution #
+#############
+Neither the server, nor the client
+have any argument needed. In order
+to execute the server run:
+$ java CentralServer
+In order to execute the client run:
+$ java Client
+
+###########
+# Testing #
+###########
+To make stress testing easier
+there is a special client made only 
+to repeat the same task indefinitely.
+In order to execute the test client run:
+$ java ElatedClient [OPTION] DELAY USERNAME
+OPTION is the kind of operations you 
+want to run:
+	0 - random operations
+ 	1 - auctions creation only
+ 	2 - bidding only
+ 	3 - listing of all items only
+ 	4 - listing of all available items only
+DELAY is the amount of time between 
+each operation. 0 is a valid value.
+USERNAME is the username that will be 
+used to access the server. This came in
+hand when testing in multiple machines
+at the same time since you can automate
+the testing with a shell script.
+
+also comes the shell script that I used
+to test with multiple machines.
+In order to execute the shell script
+run:
+$ sh clientTester.sh OPTION ITERATIONS DELAY WAIT_TIME
+OPTION and DELAY are the same as with ElatedClient.
+ITERATIONS is the number of times you want the
+test client to run.
+WAIT_TIME is the time (in seconds) before the 
+script begins to run.
+
+How I tested with multiple machines:
+for each option between 1 and 4:
+on each one of the "m" machines it was executed:
+$ sh clientTester OPTION n d w
+where OPTION==1?d=100:d=0 (because of the out 
+of memory fault)
+n = 1:m
+w = m:1  (this is to give me some time for 
+me to run all test clients at aproximaly 
+the same time)
+
+ElatedClient is set to return if it
+looses the server connection. combine this 
+with the shell script and in order for you
+to go from m machines running to m-1 the
+only thing you need to do is close the 
+server and restart it. there is a 5 sec
+delay between the end of the old execution
+and the begining of the new one.
+
+ElatedClient do not print any result on
+the screen except for the time in millis
+it took to perform an operation (since it
+is very quick the numbers can build up 
+even quicker).
+

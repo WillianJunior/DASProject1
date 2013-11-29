@@ -1,2 +1,16 @@
 \BOOKMARK [1][-]{section.1}{Introduction}{}
 \BOOKMARK [1][-]{section.2}{Server Implementation}{}
+\BOOKMARK [2][-]{subsection.2.1}{Login/Logout}{section.2}
+\BOOKMARK [2][-]{subsection.2.2}{Auction Creation}{section.2}
+\BOOKMARK [2][-]{subsection.2.3}{Bidding}{section.2}
+\BOOKMARK [2][-]{subsection.2.4}{Auction Listing}{section.2}
+\BOOKMARK [2][-]{subsection.2.5}{Racing Conditions, Concurrency and Some Semaphores}{section.2}
+\BOOKMARK [1][-]{section.3}{Client Implementation}{}
+\BOOKMARK [2][-]{subsection.3.1}{Login/Logout}{section.3}
+\BOOKMARK [2][-]{subsection.3.2}{Bidding}{section.3}
+\BOOKMARK [2][-]{subsection.3.3}{Callbacks}{section.3}
+\BOOKMARK [2][-]{subsection.3.4}{Some More Error Handling}{section.3}
+\BOOKMARK [1][-]{section.4}{Tests and Results Analysis}{}
+\BOOKMARK [2][-]{subsection.4.1}{Stress Test}{section.4}
+\BOOKMARK [2][-]{subsection.4.2}{System Efficiency}{section.4}
+\BOOKMARK [1][-]{section.5}{Final Remarks}{}
